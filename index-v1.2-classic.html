@@ -84,61 +84,6 @@ main{max-width:520px;margin:0 auto;padding:14px 12px 0;min-height:calc(100vh - 1
 .bar i{position:absolute;inset:var(--px);width:var(--w,0%);background:var(--gain);display:block}
 .bar.dn i{background:var(--loss)}
 
-/* ---- 戰鬥舞台 ---- */
-.stage{position:relative;height:392px;overflow:hidden;margin-bottom:12px;
-  border:12px solid transparent;
-  border-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAW0lEQVR4nGPk4hH7z0ACYGFgYGC4sTmIKMUavusgGhgYGBhmLDmBV3FGjAWEwcUj9v/R/oz/VckGBJ3GxSP2n4kotyCB4aCBBZmDL6QyYixQ4wEezgQAI6lJAwA16hUE6/YV0wAAAABJRU5ErkJggg==) 4 repeat;background:#a5d3e9}
-.stage .bgi{position:absolute;left:50%;top:-56%;transform:translateX(-50%);height:214%;width:auto;min-width:100%}
-.stage .dim{position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:radial-gradient(120% 62% at 50% 30%,rgba(10,14,32,.04),rgba(10,14,32,.5) 80%)}
-.stage.shake{animation:bshake .3s steps(2) 1}
-@keyframes bshake{0%,100%{transform:translate(0,0)}25%{transform:translate(-4px,3px)}50%{transform:translate(4px,-3px)}75%{transform:translate(-3px,-2px)}}
-
-#foe{position:absolute;left:50%;top:3%;transform:translateX(-50%);text-align:center;opacity:0;z-index:3}
-#foe.on{opacity:1;animation:bdrop .45s cubic-bezier(.2,1.5,.4,1) 1}
-#foe canvas{width:120px;height:120px;margin:0 auto;position:relative;z-index:2;
-  animation:bbob 2.2s ease-in-out infinite}
-#foe.hit canvas{animation:bhit .3s steps(2) 3}
-#foe .fsh{margin:-8px auto 2px;width:78px;height:32px;opacity:.5;animation:bshb 2.2s ease-in-out infinite}
-#foe .fsh canvas{width:78px;height:32px;animation:none}
-@keyframes bshb{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(.84);opacity:.34}}
-@keyframes bdrop{0%{opacity:0;transform:translateX(-50%) translateY(-60px) scale(.4)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
-@keyframes bbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes bhit{0%,100%{filter:none}50%{filter:brightness(4) saturate(0)}}
-#plate{display:inline-block;margin-top:2px;padding:3px 10px 4px;
-  background:rgba(8,11,24,.82);border:var(--px) solid rgba(226,191,104,.55)}
-#plate .n{font-size:22px;color:#fff;line-height:1.2}
-#plate .s{font-size:11px;color:#c3d0e8;line-height:1.4}
-
-#bparty{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:0;z-index:3}
-#bparty .u{width:86px;height:92px;position:relative;transition:transform .18s steps(2)}
-#bparty .u canvas{width:86px;height:92px;position:relative;z-index:2}
-#bparty .u.step{transform:translateY(-12px)}
-#bparty .u .sh{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);
-  width:46px;height:18px;opacity:.45;z-index:1}
-#bparty .u .sh canvas{width:46px;height:18px}
-#bparty .u.in{animation:bmarch .5s ease-out 1}
-@keyframes bmarch{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
-
-#fx{position:fixed;inset:0;z-index:60;pointer-events:none}
-.fx{position:absolute}
-.fx.arrow.go{animation:bfly .42s steps(8) 1 forwards}
-@keyframes bfly{100%{transform:translateY(var(--dy))}}
-.fx.cleave.go{animation:bcv .34s steps(3) 1 forwards}
-@keyframes bcv{0%{opacity:0;transform:scale(.35) rotate(-14deg)}30%{opacity:1;transform:scale(1) rotate(0)}100%{opacity:0;transform:scale(1.15) rotate(8deg)}}
-.fx.slash.go{animation:bsl .34s steps(3) 1 forwards}
-@keyframes bsl{0%{opacity:0;transform:scale(.3)}35%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.25)}}
-.fx.magic.go{animation:bmg .55s steps(4) 1 forwards}
-@keyframes bmg{0%{opacity:1;transform:scale(.35)}100%{opacity:0;transform:scale(1.8)}}
-#bflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5}
-#bflash.go{animation:bfl .5s steps(3) 1}
-@keyframes bfl{0%{opacity:0}20%{opacity:1}55%{opacity:.25}100%{opacity:0}}
-#bwipe{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
-#bwipe.go{display:block}
-#bwipe i{position:absolute;left:-40%;width:180%;height:9%;background:#0b0e1c;transform:skewY(-8deg)}
-#bwipe.go i{animation:bwp .55s cubic-bezier(.5,0,.3,1) 1 forwards}
-@keyframes bwp{0%,55%{transform:skewY(-8deg) scaleX(1)}100%{transform:skewY(-8deg) scaleX(0)}}
-
 .enc{text-align:center;padding:6px 0 2px}
 .enc .icon{width:112px;height:112px;margin:6px auto 10px}
 .enc .icon canvas{width:112px;height:112px}
@@ -331,21 +276,7 @@ nav button[aria-pressed=true] canvas{opacity:1}
 
 <!-- ============ 遭遇 ============ -->
 <section class="scr" id="s-enc">
-  <div class="stage" id="stage">
-    <img class="bgi" src="data:image/png;base64,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" alt="">
-    <div class="dim"></div>
-    <div id="foe">
-      <canvas id="foeIcon" width="16" height="16"></canvas>
-      <div class="fsh" id="foeShadow"></div>
-      <div id="plate"><div class="n" id="foeName">？？？</div><div class="s" id="foeSub"></div></div>
-    </div>
-    <div id="bparty"></div>
-    <div id="bflash"></div>
-    <div id="bwipe"><i style="top:0"></i><i style="top:11%"></i><i style="top:22%"></i><i style="top:33%"></i>
-      <i style="top:44%"></i><i style="top:55%"></i><i style="top:66%"></i><i style="top:77%"></i>
-      <i style="top:88%"></i></div>
-  </div>
-  <div class="win" id="classicEnc">
+  <div class="win">
     <div class="enc">
       <div class="icon"><canvas id="encIcon" width="16" height="16"></canvas></div>
       <div class="name" id="encName">？？？</div>
@@ -356,7 +287,7 @@ nav button[aria-pressed=true] canvas{opacity:1}
   <button class="btn gold" id="btnRoll">遭遇一家店</button>
   <div class="row">
     <button class="btn" id="btnOk">就這家</button>
-    <button class="btn" id="btnNo">逃跑</button>
+    <button class="btn" id="btnNo">再抽一次</button>
   </div>
   <div class="win" style="margin-top:14px">
     <div class="hd" data-ic="bowl"><span class="l">口袋名單</span><small id="shopCnt"></small></div>
@@ -466,7 +397,6 @@ nav button[aria-pressed=true] canvas{opacity:1}
 </section>
 
 </main>
-<div id="fx"></div>
 
 <!-- ============ 彈窗 ============ -->
 <div class="mask" id="mIcons"><div class="win">
@@ -509,13 +439,6 @@ nav button[aria-pressed=true] canvas{opacity:1}
     <div id="nameEdit"></div>
   </div>
   <div class="field">
-    <div class="lbl">遭遇的呈現方式</div>
-    <div class="seg" id="encSeg" style="margin-bottom:0">
-      <button data-v="battle">戰鬥畫面</button>
-      <button data-v="classic">經典（純文字）</button>
-    </div>
-  </div>
-  <div class="field">
     <div class="lbl">抽籤避開幾天內吃過的</div>
     <select class="inp" id="cool">
       <option value="0">不避開</option><option value="3">3 天</option>
@@ -550,10 +473,6 @@ const RAMEN=[".......................tT..tT...", "......................tT..tT..
 const RPAL={"o": "#241423", "O": "#3d2436", "b": "#c9352f", "B": "#e8564a", "d": "#8f2020", "M": "#f8e8b8", "r": "#f4ead2", "g": "#f2c14a", "s": "#c98a3a", "S": "#a86a26", "n": "#f2d78a", "N": "#fbeec0", "e": "#fdf7e8", "y": "#f0a02a", "Y": "#f8c95e", "c": "#c9584a", "C": "#e88a72", "f": "#f7dcc8", "k": "#2b3a4e", "K": "#4a6280", "v": "#4f9c3e", "V": "#7ec95e", "p": "#fdf7e8", "P": "#f27a9a", "w": "#ffffff", "t": "#a86a3a", "T": "#d19a5a"};
 const GEAR=[".............ooooo..............", ".............ohhho..............", ".............ohhho..............", "......o......ohhho......o.......", ".....ohoo..oohhhhhoo..oolo......", "....ohhhhoohhhhhhhhhoolllmo.....", "...ohhhhhhhhhhhhhhhlllllmmmo....", "....ohhhhhhhDDDDDDDllllmmmo.....", "....ohhhhhhDLLLLLLLDllmmmmo.....", ".....ohhhDDLLoooooGGDDmmmo......", ".....ohhhDLLo.....oGGDmmmo......", "....ohhhDLLo.......oGGDmmdo.....", "....ohhDLLo.........oGGDddo.....", "oooohhhDLo...........oGDdddoooo.", "ohhhhhhDLo...........oGDddddddo.", "ohhhhhhDLo...........oGDddddddo.", "ohhhhhhDLo...........oGDddddddo.", "oooohhhDLo...........oGDdddoooo.", "....ohhDLGo.........oGGDddo.....", "....ohllDGGo.......oGGDdddo.....", ".....olllDGGo.....oGGDdddo......", ".....olllDDGGoooooGGDDdddo......", "....olllmmmDGGGGGGGDddddddo.....", "....ollmmmmmDDDDDDDdddddddo.....", "...ollmmmmmmdddddddddddddddo....", "....ommmmoodddddddddooddddo.....", ".....omoo..oodddddoo..oodo......", "......o......odddo......o.......", ".............odddo..............", ".............odddo..............", ".............ooooo..............", "................................"];
 const GPAL={"o": "#241610", "d": "#5c3520", "m": "#8a5530", "l": "#b0774a", "h": "#cf9a68", "D": "#7a5410", "G": "#e8b83a", "L": "#f7dd86"};
-const SPR={"yulun_1": ["............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo...............", "...............ohHHhhhhhhhDDo...............", "...............ohHhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "................ohhhhhhhhDDo................", ".................ohhhhhhDDo.................", "...................ossSo....................", "...............ollccccccccCCo...............", "...oWwo........ollccccccccCCo...............", "....oWwo.......ollccccccccCCo...............", "....moWwo......ollccccccccCCo...............", "....m.oWwo.....ollccccccccCCo...............", "....m.oWwooooooollccccccccCCooooooo.........", "....m..oWwosCCCollccccccccCCoCCCsso.........", "....m..oWsssCCCollccccccccCCoCCCssso........", "....m...osssCCCollccccccccCCoCCCssso........", "....m...oWwoCCCollccccccccCCoCCCsSo.........", "....m...oWwooooollccccccccCCooooooo.........", "....m...oWwo...ollccccccccCCo...............", "....m..oWwo....ollccccccccCCo...............", "....m..oWwo....ollccccccccCCo...............", "....m.oWwo.....ollccccccccCCo...............", "....m.oWwo.....oqqppppppppQQo...............", "....moWwo......oqqppppppppQQo...............", "....oWwo.......oqqppppppppQQo...............", "...oWwo........oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "yulun_atk": ["............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo...............", "...............ohHHhhhhhhhDDo...............", "...............ohHhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...oWwo........ohhhhhhhhhhDDo...............", "....oWwo.......ohhhhhhhhhhDDo...............", ".....oWwo.......ohhhhhhhhDDo................", "......oWwo.......ohhhhhhDDo.................", "......oWwo.........ossSo....................", ".......oWwoooooollccccccccCCooooooo.........", ".......oWwosCCCollccccccccCCoCCCsso.........", "........osssCCCollccccccccCCoCCCssso........", "........osssCCCollccccccccCCoCCCssso........", "........oWwoCCCollccccccccCCoCCCsSo.........", "........oWwooooollccccccccCCooooooo.........", ".......oWwo....ollccccccccCCo...............", ".......oWwo....ollccccccccCCo...............", "......oWwo.....ollccccccccCCo...............", "......oWwo.....ollccccccccCCo...............", ".....oWwo......ollccccccccCCo...............", "....oWwo.......ollccccccccCCo...............", "...oWwo........ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "eric_1": ["............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo...............", "...............ohHHhhhhhhhDDo...............", "...............ohHhhhhhhhhDDo.....oMo.......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "................ohhhhhhhhDDo.....oMMmo......", ".................ohhhhhhDDo......oMMmo......", "...................ossSo.........oMMmo......", "...............ollccccccccCCo....oMMmo......", "...............ollccccccccCCo....oMMmo......", ".....oooooo....ollccccccccCCo....oMMmo......", "....omMMMMmo...ollccccccccCCo....oMMmo......", "...omMMMMMMmo..ollccccccccCCo....oMMmo......", "...omMMggMMmoooollccccccccCCooooooMMmo......", "...omMgggMMmoCCollccccccccCCoCCCogggggo.....", "...omMMggsssoCCollccccccccCCoCCCsssgggo.....", "...omMMMMsssoCCollccccccccCCoCCCsssWwo......", "...omMMMMMMmoCCollccccccccCCoCCCsoWWwo......", "....ommMMmmooooollccccccccCCooooooWWwo......", ".....ommmmo....ollccccccccCCo....oWWwo......", "......oomo.....ollccccccccCCo....ogggo......", ".......oo......ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "eric_atk": ["..................................oMo.......", ".................................oMMmo......", "..................oooooooo.......oMMmo......", "................ohHHhhhhhDDo.....oMMmo......", "...............ohHHhhhhhhhDDo....oMMmo......", "...............ohHHhhhhhhhDDo....oMMmo......", "...............ohHhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "................ohhhhhhhhDDo.....oMMmo......", ".................ohhhhhhDDo......oMMmo......", ".....oooooo........ossSo.........oMMmo......", "....omMMMMmo...ollccccccccCCo...ogggggo.....", "...omMMMMMMmoooollccccccccCCooooogggggo.....", "...omMMggMMmoCCollccccccccCCoCCCsoWWwo......", "...omMgggsssoCCollccccccccCCoCCCsssWwo......", "...omMMggsssoCCollccccccccCCoCCCsssWwo......", "...omMMMMMMmoCCollccccccccCCoCCCsoWWwo......", "...omMMMMMMmoooollccccccccCCoooooogggo......", "....ommMMmmo...ollccccccccCCo...............", ".....ommmmo....ollccccccccCCo...............", "......oomo.....ollccccccccCCo...............", ".......oo......ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "karen_1": ["............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo....oooo.......", "...............ohHHhhhhhhhDDo...oeGGeo......", "...............ohHhhhhhhhhDDo..oeGGGGeo.....", "...............ohhhhhhhhhhDDo..oGGGGGGo.....", "...............ohhhhhhhhhhDDo..oeGGGGeo.....", "...............ohhhhhhhhhhDDo...oeGGeo......", "...............ohhhhhhhhhhDDo....oggo.......", "................ohhhhhhhhDDo.....ogggo......", ".................ooggggggoo......oWwo.......", "...................ohhhhho.......oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhocCCo....oWwo.......", "...............ollcohhhhocCCo....oWwo.......", ".........ooooooollcohhhhocCCooooooWwo.......", ".........ossCCCollcohhhhocCCoCCCsoWwo.......", "........osssCCCollcohhhhocCCoCCCssswo.......", "........osssCCCollccohhoccCCoCCCssswo.......", ".........oSsCCCollccohhoccCCoCCCsoWwo.......", ".........ooooooollccohhoccCCooooooWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccoohoocCCo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............ooqppqooQppQoo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............obbbbo..obbbbo....oWwo.......", "...............oooooo..oooooo....oWwo.......", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "karen_atk": [".................................oooo.......", "................................oeGGeo......", "..................oooooooo.....oeGGGGeo.....", "................ohHHhhhhhDDo...oGGGGGGo.....", "...............ohHHhhhhhhhDDo..oeGGGGeo.....", "...............ohHHhhhhhhhDDo...oeGGeo......", "...............ohHhhhhhhhhDDo....oggo.......", "...............ohhhhhhhhhhDDo....ogggo......", "...............ohhhhhhhhhhDDo....oWwo.......", "...............ohhhhhhhhhhDDo....oWwo.......", "...............ohhhhhhhhhhDDo....oWwo.......", "................ohhhhhhhhDDo.....oWwo.......", ".................ooggggggoo......oWwo.......", "...................ohhhhho.......oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", ".........ooooooollcohhhhhoCCooooooWwo.......", ".........ossCCCollcohhhhocCCoCCCsoWwo.......", "........osssCCCollcohhhhocCCoCCCssswo.......", "........osssCCCollcohhhhocCCoCCCssswo.......", ".........oSsCCCollcohhhhocCCoCCCsoWwo.......", ".........ooooooollcohhhhocCCooooooWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccoohoocCCo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............ooqppqooQppQoo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............obbbbo..obbbbo....oWwo.......", "...............oooooo..oooooo....oWwo.......", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "yulun_2": ["............................................", "............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo...............", "...............ohHHhhhhhhhDDo...............", "...............ohHhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "...............ohhhhhhhhhhDDo...............", "................ohhhhhhhhDDo................", ".................ohhhhhhDDo.................", "...................ossSo....................", "...............ollccccccccCCo...............", "...oWwo........ollccccccccCCo...............", "....oWwo.......ollccccccccCCo...............", "....moWwo......ollccccccccCCo...............", "....m.oWwo.....ollccccccccCCo...............", "....m.oWwooooooollccccccccCCooooooo.........", "....m..oWwosCCCollccccccccCCoCCCsso.........", "....m..oWsssCCCollccccccccCCoCCCssso........", "....m...osssCCCollccccccccCCoCCCssso........", "....m...oWwoCCCollccccccccCCoCCCsSo.........", "....m...oWwooooollccccccccCCooooooo.........", "....m...oWwo...ollccccccccCCo...............", "....m..oWwo....ollccccccccCCo...............", "....m..oWwo....ollccccccccCCo...............", "....m.oWwo.....ollccccccccCCo...............", "....m.oWwo.....oqqppppppppQQo...............", "....moWwo......oqqppppppppQQo...............", "....oWwo.......oqqppppppppQQo...............", "...oWwo........oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "eric_2": ["............................................", "............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo...............", "...............ohHHhhhhhhhDDo...............", "...............ohHhhhhhhhhDDo.....oMo.......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "...............ohhhhhhhhhhDDo....oMMmo......", "................ohhhhhhhhDDo.....oMMmo......", ".................ohhhhhhDDo......oMMmo......", "...................ossSo.........oMMmo......", "...............ollccccccccCCo....oMMmo......", "...............ollccccccccCCo....oMMmo......", ".....oooooo....ollccccccccCCo....oMMmo......", "....omMMMMmo...ollccccccccCCo....oMMmo......", "...omMMMMMMmo..ollccccccccCCo....oMMmo......", "...omMMggMMmoooollccccccccCCooooooMMmo......", "...omMgggMMmoCCollccccccccCCoCCCogggggo.....", "...omMMggsssoCCollccccccccCCoCCCsssgggo.....", "...omMMMMsssoCCollccccccccCCoCCCsssWwo......", "...omMMMMMMmoCCollccccccccCCoCCCsoWWwo......", "....ommMMmmooooollccccccccCCooooooWWwo......", ".....ommmmo....ollccccccccCCo....oWWwo......", "......oomo.....ollccccccccCCo....ogggo......", ".......oo......ollccccccccCCo...............", "...............ollccccccccCCo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............oqqppppppppQQo...............", "...............ooqppqooQppQoo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............oqpppo..opppQo...............", "...............obbbbo..obbbbo...............", "...............oooooo..oooooo...............", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"], "karen_2": ["............................................", "............................................", "............................................", "..................oooooooo..................", "................ohHHhhhhhDDo................", "...............ohHHhhhhhhhDDo....oooo.......", "...............ohHHhhhhhhhDDo...oeGGeo......", "...............ohHhhhhhhhhDDo..oeGGGGeo.....", "...............ohhhhhhhhhhDDo..oGGGGGGo.....", "...............ohhhhhhhhhhDDo..oeGGGGeo.....", "...............ohhhhhhhhhhDDo...oeGGeo......", "...............ohhhhhhhhhhDDo....oggo.......", "................ohhhhhhhhDDo.....ogggo......", ".................ooggggggoo......oWwo.......", "...................ohhhhho.......oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhhoCCo....oWwo.......", "...............ollcohhhhocCCo....oWwo.......", "...............ollcohhhhocCCo....oWwo.......", ".........ooooooollcohhhhocCCooooooWwo.......", ".........ossCCCollcohhhhocCCoCCCsoWwo.......", "........osssCCCollcohhhhocCCoCCCssswo.......", "........osssCCCollccohhoccCCoCCCssswo.......", ".........oSsCCCollccohhoccCCoCCCsoWwo.......", ".........ooooooollccohhoccCCooooooWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccohhoccCCo....oWwo.......", "...............ollccoohoocCCo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............oqqppppppppQQo....oWwo.......", "...............ooqppqooQppQoo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............oqpppo..opppQo....oWwo.......", "...............obbbbo..obbbbo....oWwo.......", "...............oooooo..oooooo....oWwo.......", "............................................", "............................................", "............................................", "............................................", "............................................", "............................................"]};
-const SPAL={"yulun": {"o": "#171021", "h": "#33241c", "H": "#503a2c", "D": "#221710", "s": "#f2cba4", "c": "#3a6aa8", "C": "#2a4f80", "l": "#4d7cbe", "p": "#2f3a58", "q": "#3d4a6d", "Q": "#232b44", "S": "#d9a97e", "w": "#6f4620", "W": "#a5703f", "m": "#e6e0cc", "M": "#eef3f8", "g": "#c9993a", "b": "#2a2018"}, "eric": {"o": "#171021", "h": "#7d4d28", "H": "#a3713e", "D": "#5c3719", "s": "#eec5a0", "c": "#4a8f68", "C": "#356e4e", "l": "#5da37a", "p": "#2f3a58", "q": "#3d4a6d", "Q": "#232b44", "S": "#cf9f78", "w": "#6f4620", "W": "#a5703f", "m": "#7d8797", "M": "#cfd9e4", "g": "#e2bf68", "b": "#2a2018"}, "karen": {"o": "#171021", "h": "#4e3122", "H": "#70482f", "D": "#38221a", "s": "#f7d5b0", "c": "#c96a8a", "C": "#a84f6e", "l": "#d97e9a", "p": "#5a6ea8", "q": "#6a80c0", "Q": "#44548a", "S": "#dcb08c", "w": "#6f4620", "W": "#a5703f", "m": "#d8dde0", "M": "#f2f6fa", "G": "#8ef0e6", "e": "#2f6f6c", "g": "#c9993a", "b": "#2a2018"}};
-const FX={"arrow": ["....1....", "...121...", "...121...", "..12321..", "..12321..", ".1123211.", "111232111", "..12321..", "...121...", "...121...", "...121...", "...121...", "...121...", "...121...", "...121...", "...121...", "...121...", "...121...", "..41214..", ".4412144.", "444121444", ".4412144.", "..41214..", "...121...", "....1...."], "cleave": ["................................", "................................", "................................", "................................", "................................", "................................", "................................", "................................", "................................", "..............................1.", "..............................11", ".............................11.", ".............................11.", "............................121.", "............................121.", "...........................1221.", "..........................13221.", ".........................132231.", "........................132221..", ".......................1322231.3", ".....................113222231..", "....................133222231...", "....................132222231...", "...................132222231....", "..................1322222331..3.", ".................1322222331..3..", "................13222223311.3...", "...............1322223311..3....", ".............1122223311.......33", "...........1122223111...........", ".........111111111..............", "..........1.........3..........."], "slash": ["..........11..........", ".........1221.........", ".........1221.........", "..1......1221......1..", "..11.....1221.....11..", "...121...1221...121...", "....1221.1221.1221....", ".....122212221221.....", "1111..1222222221..1111", "1222211222222221122221", "1222222222222222222221", "1222222222222222222221", "1222211222222221122221", "1111..1222222221..1111", ".....122212221221.....", "....1221.1221.1221....", "...121...1221...121...", "..11.....1221.....11..", "..1......1221......1..", ".........1221.........", ".........1221.........", "..........11.........."], "magic": ["..........11..........", ".........1221.........", "..1.......11.......1..", ".121.............121..", "..1...11111111...1....", ".....1222222221.......", "....122111111221......", "...1221......1221.....", "..1221........1221....", "..122..........221....", "1.122..........221..1.", "121122........221121..", "1.122..........221..1.", "..122..........221....", "..1221........1221....", "...1221......1221.....", "....122111111221......", ".....1222222221.......", "..1...11111111...1....", ".121.............121..", "..1.......11.......1..", ".........1221.........", "..........11.........."], "shadow": ["...111111...", ".1122222211.", "112222222211", ".1122222211.", "...111111..."]};
-const FXPAL={"arrow": ["", "#171021", "#f4efe2", "#b9b3a2", "#8a5a2a"], "cleave": ["", "#101a33", "#ffffff", "#7fd4ff"], "slash": ["", "#171021", "#ffffff", "#e2bf68"], "magic": ["", "#171021", "#8ef0e6", "#c8fbf6"], "shadow": ["", "#0d1226", "#1a2440"]};
 
 /* ================= 基礎 ================= */
 const $ = s => document.getElementById(s);
@@ -612,9 +531,9 @@ const DEFAULT_MEMBERS = [
   { id: 'm2', name: 'Eric', portrait: 'eric', cls: 'shield', job: '課金戰士・滿手現金', updatedAt: 0, deleted: 0 },
   { id: 'm3', name: 'Karen', portrait: 'karen', cls: 'staff', job: '先知・唯一知道午餐要吃什麼的人', updatedAt: 0, deleted: 0 }
 ];
-const blank = { members: DEFAULT_MEMBERS, shops: [], entries: [], periods: [], outbox: [], cfg: { url: '', key: '', cool: 5, enc: 'battle' }, me: '', lastSync: 0 };
+const blank = { members: DEFAULT_MEMBERS, shops: [], entries: [], periods: [], outbox: [], cfg: { url: '', key: '', cool: 5 }, me: '', lastSync: 0 };
 let S = Object.assign({}, blank, store.load() || {});
-S.cfg = Object.assign({ url: '', key: '', cool: 5, enc: 'battle' }, S.cfg || {});
+S.cfg = Object.assign({ url: '', key: '', cool: 5 }, S.cfg || {});
 if (!S.members || !S.members.length) S.members = DEFAULT_MEMBERS;
 const save = () => store.save(S);
 
@@ -802,19 +721,13 @@ const LINES = [
   '警告：上次吃完整個下午都很想睡。', 'Eric 掏出了現金。', '錢包：還撐得住。',
   '雨還沒停，需要有人犧牲。', 'Yulun 檢查了一下優惠。', '沒有人有意見。決定了。'
 ];
-const RUNLINES = ['三人成功逃走了！', '逃跑成功。什麼都沒發生。', '隊伍轉身就走。',
-  '大家默默地往下一條巷子移動。', '逃跑！但肚子還是餓。'];
 let typing = null;
-function type(el, txt, cb) {
+function type(el, txt) {
   clearInterval(typing); el.textContent = ''; let i = 0;
   typing = setInterval(() => {
     el.textContent = txt.slice(0, ++i);
-    if (i >= txt.length) {
-      clearInterval(typing);
-      el.innerHTML = esc(txt) + ' <span class="cur">▼</span>';
-      if (cb) cb();
-    }
-  }, 30);
+    if (i >= txt.length) { clearInterval(typing); el.innerHTML = esc(txt) + ' <span class="cur">▼</span>'; }
+  }, 34);
 }
 function lastEaten() {
   const r = {};
@@ -825,167 +738,32 @@ function lastEaten() {
   });
   return r;
 }
-
-/* ---- 戰鬥版：隊伍、影子、特效 ---- */
-const units = [];
-function fxDraw(name, w, h, x, y, extra) {
-  const d = document.createElement('div'); d.className = 'fx ' + name;
-  const cv = document.createElement('canvas');
-  draw(cv, FX[name], FXPAL[name]);
-  cv.style.width = w + 'px'; cv.style.height = h + 'px';
-  d.appendChild(cv);
-  d.style.left = x + 'px'; d.style.top = y + 'px';
-  if (extra) for (const k in extra) {
-    if (k.startsWith('--')) d.style.setProperty(k, extra[k]); else d.style[k] = extra[k];
-  }
-  $('fx').appendChild(d);
-  void d.offsetWidth; d.classList.add('go');
-  setTimeout(() => d.remove(), 1000);
-}
-function shadowInto(el, w, h) {
-  const cv = document.createElement('canvas');
-  draw(cv, FX.shadow, FXPAL.shadow);
-  cv.style.width = w + 'px'; cv.style.height = h + 'px';
-  el.appendChild(cv);
-}
-function buildParty() {
-  const box = $('bparty'); box.innerHTML = ''; units.length = 0;
-  M().forEach(m => {
-    const k = SPR[m.portrait + '_1'] ? m.portrait : 'yulun';
-    const d = document.createElement('div'); d.className = 'u';
-    const cv = document.createElement('canvas');
-    cv.style.width = '86px'; cv.style.height = '92px';
-    const sh = document.createElement('div'); sh.className = 'sh'; shadowInto(sh, 46, 18);
-    d.append(cv, sh); box.appendChild(d);
-    units.push({ k, d, cv, frame: 0 });
-  });
-  units.forEach(u => draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]));
-  shadowInto($('foeShadow'), 78, 32);
-}
-let idleOn = true;
-setInterval(() => {
-  if (!idleOn || !units.length) return;
-  units.forEach(u => { u.frame ^= 1; draw(u.cv, SPR[u.k + '_' + (u.frame ? 2 : 1)], SPAL[u.k]); });
-}, 520);
-function hitFoe() {
-  $('foe').classList.add('hit');
-  setTimeout(() => $('foe').classList.remove('hit'), 400);
-}
-function attackOne(u, done) {
-  idleOn = false;
-  u.d.classList.add('step');
-  setTimeout(() => {
-    draw(u.cv, SPR[u.k + '_atk'], SPAL[u.k]);
-    const f = $('foeIcon').getBoundingClientRect(), s = u.cv.getBoundingClientRect();
-    if (u.k === 'yulun') {
-      const sx = s.left + s.width * 0.14, sy = s.top + s.height * 0.32;
-      fxDraw('arrow', 24, 66, sx, sy, { '--dy': ((f.top + f.height * 0.7) - sy) + 'px' });
-      setTimeout(() => { fxDraw('slash', 96, 96, f.left + f.width / 2 - 48, f.top + f.height / 2 - 48); hitFoe(); }, 370);
-    } else if (u.k === 'eric') {
-      fxDraw('cleave', 140, 140, f.left + f.width / 2 - 78, f.top + f.height / 2 - 62);
-      setTimeout(hitFoe, 90);
-    } else {
-      fxDraw('magic', 122, 128, f.left + f.width / 2 - 61, f.top + f.height / 2 - 64);
-      setTimeout(hitFoe, 110);
-    }
-  }, 200);
-  setTimeout(() => {
-    u.d.classList.remove('step');
-    draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]);
-    idleOn = true;
-    if (done) done();
-  }, 880);
-}
-
-/* ---- 抽籤 ---- */
-let rolling = false, foeShop = null;
-const battleMode = () => S.cfg.enc !== 'classic';
-function pickShop() {
+let rolling = false;
+function roll() {
   const all = alive(S.shops);
-  if (!all.length) return null;
+  if (!all.length) { toast('先在下面加幾家店'); return; }
+  if (rolling) return;
   const rec = lastEaten(), cd = +S.cfg.cool || 0;
   let pool = all.filter(s => rec[s.name] == null || rec[s.name] >= cd);
   const relaxed = !pool.length; if (relaxed) pool = all;
-  return { pool, rec, relaxed };
+  rolling = true; let n = 0;
+  const t = setInterval(() => {
+    const s = pool[Math.floor(Math.random() * pool.length)];
+    $('encName').textContent = s.name;
+    draw($('encIcon'), FOOD[ic(s.icon)], FPAL[ic(s.icon)]);
+    if (++n > 12) {
+      clearInterval(t); rolling = false;
+      const d = rec[s.name];
+      $('encSub').textContent = (d == null ? '還沒記過這家' : d === 0 ? '今天已經吃過了' : d === 1 ? '昨天才吃過' : d + ' 天前吃過')
+        + (relaxed ? '（名單都吃遍了）' : '');
+      type($('talk'), '遭遇了「' + s.name + '」！\u3000' + LINES[Math.floor(Math.random() * LINES.length)]);
+      $('shop').value = s.name; paint(s.icon, false);
+      if (navigator.vibrate) navigator.vibrate(16);
+    }
+  }, 68);
 }
-function showFoe(s, rec, relaxed) {
-  foeShop = s;
-  const key = ic(s.icon);
-  draw($('foeIcon'), FOOD[key], FPAL[key]);
-  draw($('encIcon'), FOOD[key], FPAL[key]);
-  $('foeName').textContent = s.name;
-  $('encName').textContent = s.name;
-  const d = rec[s.name];
-  const sub = (d == null ? '還沒記過這家' : d === 0 ? '今天已經吃過了' : d === 1 ? '昨天才吃過' : d + ' 天前吃過')
-    + (relaxed ? '（名單都吃遍了）' : '');
-  $('foeSub').textContent = sub; $('encSub').textContent = sub;
-  $('shop').value = s.name; paint(key, false);
-  if (navigator.vibrate) navigator.vibrate(16);
-}
-function roll() {
-  const p = pickShop();
-  if (!p) { toast('先在下面加幾家店'); return; }
-  if (rolling) return;
-  rolling = true;
-  if (battleMode()) {
-    const st = $('stage');
-    ['bflash', 'bwipe'].forEach(id => { $(id).classList.remove('go'); void $(id).offsetWidth; $(id).classList.add('go'); });
-    st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
-    $('foe').classList.remove('on');
-    $$('#bparty .u').forEach((u, i) => {
-      u.classList.remove('in'); void u.offsetWidth;
-      setTimeout(() => u.classList.add('in'), 240 + i * 70);
-    });
-    setTimeout(() => {
-      const s = p.pool[Math.floor(Math.random() * p.pool.length)];
-      showFoe(s, p.rec, p.relaxed);
-      $('foe').classList.remove('on'); void $('foe').offsetWidth; $('foe').classList.add('on');
-      type($('talk'), s.name + ' 出現了！\u3000' + LINES[Math.floor(Math.random() * LINES.length)]);
-      rolling = false;
-    }, 330);
-  } else {
-    let n = 0;
-    const t = setInterval(() => {
-      const s = p.pool[Math.floor(Math.random() * p.pool.length)];
-      $('encName').textContent = s.name;
-      const key = ic(s.icon);
-      draw($('encIcon'), FOOD[key], FPAL[key]);
-      if (++n > 12) {
-        clearInterval(t); rolling = false;
-        showFoe(s, p.rec, p.relaxed);
-        type($('talk'), '遭遇了「' + s.name + '」！\u3000' + LINES[Math.floor(Math.random() * LINES.length)]);
-      }
-    }, 68);
-  }
-}
-$('btnRoll').onclick = roll;
-$('btnNo').onclick = () => {
-  if (rolling) return;
-  if (battleMode() && foeShop) {
-    type($('talk'), RUNLINES[Math.floor(Math.random() * RUNLINES.length)]);
-    setTimeout(roll, 700);
-  } else roll();
-};
-$('btnOk').onclick = () => {
-  if (!foeShop) { toast('先抽一家'); return; }
-  if (!battleMode()) { go('log'); return; }
-  if (rolling) return;
-  rolling = true;
-  type($('talk'), '隊伍發動攻擊！');
-  units.forEach((u, i) => setTimeout(() => attackOne(u, i === units.length - 1 ? () => {
-    type($('talk'), '決定吃「' + foeShop.name + '」！\u3000隊伍朝店家前進。', () => {
-      rolling = false; setTimeout(() => go('log'), 500);
-    });
-  } : null), 200 + i * 780));
-};
-function applyEncStyle() {
-  const b = battleMode();
-  $('stage').style.display = b ? '' : 'none';
-  $('classicEnc').style.display = b ? 'none' : '';
-  $('btnNo').textContent = b ? '逃跑' : '再抽一次';
-  $('btnRoll').textContent = b ? '遭遇一家店' : '抽一家';
-  if (b && !units.length) buildParty();
-}
+$('btnRoll').onclick = roll; $('btnNo').onclick = roll;
+$('btnOk').onclick = () => { if ($('encName').textContent === '？？？') { toast('先抽一家'); return; } go('log'); };
 $('addShop').onclick = () => {
   const v = $('newShop').value.trim(); if (!v) return;
   if (alive(S.shops).some(s => s.name === v)) { toast('已經有這家了'); return; }
@@ -1295,8 +1073,6 @@ $('sync').onclick = () => {
 $('gear').onclick = () => {
   if (!S.cfg.url) { go('setup'); return; }
   $('cfgUrl').value = S.cfg.url; $('cfgKey').value = S.cfg.key; $('cool').value = S.cfg.cool;
-  $('encSeg').querySelectorAll('button').forEach(b =>
-    b.setAttribute('aria-pressed', b.dataset.v === (S.cfg.enc || 'battle')));
   buildMePick(); buildNameEdit(); $('mSet').classList.add('on');
 };
 function buildMePick() {
@@ -1323,11 +1099,6 @@ function buildNameEdit() {
     box.appendChild(i);
   });
 }
-$('encSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
-  S.cfg.enc = b.dataset.v; save();
-  $('encSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
-  applyEncStyle();
-});
 $('setSave').onclick = async () => {
   S.cfg.url = $('cfgUrl').value.trim(); S.cfg.key = $('cfgKey').value.trim();
   S.cfg.cool = +$('cool').value; save(); $('mSet').classList.remove('on');
@@ -1509,7 +1280,7 @@ function render() {
 }
 
 /* ================= 啟動 ================= */
-buildForm(); resetForm(); applyEncStyle();
+buildForm(); resetForm();
 if (!S.cfg.url || !S.me) { go('setup'); if (S.cfg.url) { $('setUrl').value = S.cfg.url; $('setKey').value = S.cfg.key; $('whoBox').style.display = ''; buildWho(); } }
 else go('party');
 render();
