@@ -119,6 +119,9 @@ main{max-width:520px;margin:0 auto;padding:14px 12px 0;min-height:calc(100vh - 1
 .pick button[aria-pressed=true]{border-color:var(--gold);background:#26315a}
 .pick canvas{width:32px;height:32px}
 .pick .t{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.pick.meal button{flex-direction:row;gap:6px;padding:9px 2px;justify-content:center}
+.pick.meal canvas{width:24px;height:24px}
+.pick.meal .t{font-size:22px}
 .amt{display:flex;align-items:center;gap:10px;margin-bottom:7px}
 .amt .who{width:32px;height:32px;flex:none}
 .amt .who canvas{width:32px;height:32px}
@@ -127,6 +130,7 @@ main{max-width:520px;margin:0 auto;padding:14px 12px 0;min-height:calc(100vh - 1
 
 .mask{position:fixed;inset:0;z-index:60;display:none;background:rgba(6,9,20,.84);
       align-items:center;justify-content:center;padding:14px}
+#mIcons{z-index:70}
 .mask.on{display:flex}
 .mask .win{max-width:440px;width:100%;margin:0;max-height:86vh;overflow:auto}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -158,7 +162,18 @@ main{max-width:520px;margin:0 auto;padding:14px 12px 0;min-height:calc(100vh - 1
 .log .g{color:var(--gain)}.log .r{color:var(--loss)}
 .zero{text-align:center;color:var(--dim);font-size:11px;padding:16px 0;line-height:2}
 
-.seg{display:flex;gap:8px;margin-bottom:12px}
+.who{display:flex;gap:6px;margin-bottom:10px}
+.who button{flex:1;padding:6px 2px;background:rgba(20,27,54,.9);border:var(--px) solid #364268;
+  display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.who button[aria-pressed=true]{border-color:var(--gold);background:#2d3a68}
+.who canvas{width:32px;height:32px}
+.who .t{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.who button[aria-pressed=true] .t{color:var(--gold)}
+.other{font-size:11px;color:var(--dim);padding-top:9px;margin-top:2px;
+       border-top:var(--px) dashed rgba(159,176,210,.25);line-height:1.8}
+.cal .d .dot{position:absolute;right:2px;bottom:2px;width:5px;height:5px;background:var(--gold)}
+.cal .d{position:relative}
+.shopEdit{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .seg button{flex:1;padding:8px;background:rgba(20,27,54,.9);border:var(--px) solid #364268;text-align:center}
 .seg button[aria-pressed=true]{border-color:var(--gold);background:#2d3a68;color:var(--gold)}
 .chart{display:flex;align-items:flex-end;gap:5px;height:126px;padding:0 2px;margin:4px 0 6px}
@@ -279,6 +294,7 @@ nav button[aria-pressed=true] canvas{opacity:1}
       <button class="btn sm" id="addShop" style="width:74px;margin:0;flex:none">加入</button>
     </div>
     <div id="shops"></div>
+    <button class="btn sm" id="moreShops" style="display:none"></button>
   </div>
 </section>
 
@@ -289,6 +305,10 @@ nav button[aria-pressed=true] canvas{opacity:1}
     <div class="field">
       <div class="lbl">日期</div>
       <input class="inp" type="date" id="fDate">
+    </div>
+    <div class="field">
+      <div class="lbl">分類</div>
+      <div class="pick meal" id="fMeal"></div>
     </div>
     <div class="field">
       <div class="lbl">店家 <span id="guessLbl" style="color:var(--gold)"></span></div>
@@ -339,17 +359,18 @@ nav button[aria-pressed=true] canvas{opacity:1}
 
 <!-- ============ 統計 ============ -->
 <section class="scr" id="s-stat">
+  <div class="who" id="whoSeg"></div>
   <div class="seg" id="statSeg">
     <button data-v="week" aria-pressed="true">近 8 週</button>
     <button data-v="month" aria-pressed="false">月曆</button>
   </div>
   <div id="statWeek">
     <div class="win">
-      <div class="hd" data-ic="chart"><span class="l">每週花費</span><small>全隊合計</small></div>
+      <div class="hd" data-ic="chart"><span class="l">每週花費</span><small id="chartSub"></small></div>
       <div class="chart" id="chart"></div>
     </div>
     <div class="win">
-      <div class="hd" data-ic="chart"><span class="l">數字</span><small>近 8 週</small></div>
+      <div class="hd" data-ic="chart"><span class="l">數字</span><small id="kvSub"></small></div>
       <div id="kvs"></div>
     </div>
     <div class="win">
@@ -377,9 +398,26 @@ nav button[aria-pressed=true] canvas{opacity:1}
 
 <!-- ============ 彈窗 ============ -->
 <div class="mask" id="mIcons"><div class="win">
-  <div class="hd" data-ic="book"><span class="l">圖鑑</span><small>24 種</small></div>
+  <div class="hd" data-ic="book"><span class="l" id="iconTitle">圖鑑</span><small>點一個換掉</small></div>
   <div class="grid" id="icons"></div>
   <button class="btn" data-close>關閉</button>
+</div></div>
+
+<div class="mask" id="mShop"><div class="win">
+  <div class="hd" data-ic="bowl"><span class="l">編輯店家</span></div>
+  <div class="field">
+    <div class="lbl">名字</div>
+    <input class="inp" id="edName">
+  </div>
+  <div class="field">
+    <div class="lbl">圖示（改了以前記過的也會跟著換）</div>
+    <button class="badge" id="edBadge" style="width:100%;height:56px;flex-direction:row;gap:10px">
+      <span class="k">點這裡改</span>
+    </button>
+  </div>
+  <button class="btn gold" id="edSave">儲存</button>
+  <button class="btn sm" id="edDel" style="color:var(--loss)">從名單移除</button>
+  <button class="btn" data-close>取消</button>
 </div></div>
 
 <div class="mask" id="mDay"><div class="win">
@@ -497,6 +535,8 @@ const mIdx = id => Math.max(0, M().findIndex(m => m.id === id));
 const mName = id => (M().find(m => m.id === id) || {}).name || '?';
 const mPort = id => (M().find(m => m.id === id) || {}).portrait || 'yulun';
 const AK = ['a1', 'a2', 'a3'];
+const MEALS = [['lunch', '午餐', 'bento'], ['snack', '點心', 'boba'], ['dinner', '晚餐', 'donburi']];
+const mealName = k => (MEALS.find(m => m[0] === k) || MEALS[0])[1];
 const eTotal = e => AK.reduce((s, k) => s + (+e[k] || 0), 0);
 const openEntries = () => alive(S.entries).filter(e => !e.periodId).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
@@ -626,8 +666,16 @@ function go(s) {
 }
 draw($('crest'), RAMEN, RPAL); $('crest').style.width = '32px'; $('crest').style.height = '32px';
 $$('.hd[data-ic]').forEach(hd => { const i = document.createElement('i'); i.appendChild(uic(hd.dataset.ic, 16)); hd.insertBefore(i, hd.firstChild); });
-$$('[data-close]').forEach(b => b.onclick = () => b.closest('.mask').classList.remove('on'));
-$$('.mask').forEach(m => m.onclick = e => { if (e.target === m) m.classList.remove('on'); });
+$$('[data-close]').forEach(b => b.onclick = () => {
+  const m = b.closest('.mask');
+  if (m.id === 'mIcons') iconTarget = 'entry';
+  m.classList.remove('on');
+});
+$$('.mask').forEach(m => m.onclick = e => {
+  if (e.target !== m) return;
+  if (m.id === 'mIcons') iconTarget = 'entry';
+  m.classList.remove('on');
+});
 
 /* ================= 初次設定 ================= */
 $('setGo').onclick = async () => {
@@ -653,7 +701,7 @@ function buildWho() {
     p.appendChild(b);
   });
 }
-$('whoGo').onclick = () => { S.me = whoSel; save(); go('party'); render(); toast('歡迎加入'); };
+$('whoGo').onclick = () => { S.me = whoSel; save(); buildForm(); resetForm(); go('party'); render(); toast('歡迎加入'); };
 
 /* ================= 遭遇 ================= */
 const LINES = [
@@ -714,31 +762,54 @@ $('addShop').onclick = () => {
   $('newShop').value = ''; toast('加好了');
 };
 $('newShop').addEventListener('keydown', e => { if (e.key === 'Enter') $('addShop').click(); });
+$('moreShops').onclick = () => { shopsOpen = !shopsOpen; render(); };
 
 /* ================= 記錄 ================= */
-let editing = null, cur = 'bento', manual = false;
+let editing = null, cur = 'bento', manual = false, iconTarget = 'entry', shopsOpen = false;
 function paint(k, byUser) {
   cur = k; manual = !!byUser;
   [...$('badge').querySelectorAll('canvas')].forEach(c => c.remove());
   $('badge').insertBefore(pxc('f', k, 32), $('badge').firstChild);
   $('guessLbl').textContent = (byUser ? '手動：' : '自動：') + (LABEL[k] || '');
-  Object.entries(btns).forEach(([kk, b]) => b.setAttribute('aria-pressed', kk === k));
 }
 const btns = {};
 Object.keys(FOOD).forEach(k => {
   const b = document.createElement('button'); b.setAttribute('aria-pressed', 'false');
   b.appendChild(pxc('f', k, 32));
   const t = document.createElement('div'); t.className = 't'; t.textContent = LABEL[k]; b.appendChild(t);
-  b.onclick = () => { paint(k, true); $('mIcons').classList.remove('on'); };
+  b.onclick = () => {
+    if (iconTarget === 'shop') { edIcon = k; paintEd(); }
+    else paint(k, true);
+    iconTarget = 'entry'; $('mIcons').classList.remove('on');
+  };
   btns[k] = b; $('icons').appendChild(b);
 });
-$('badge').onclick = () => { $('mIcons').classList.add('on'); if (btns[cur]) btns[cur].scrollIntoView({ block: 'center' }); };
+// where: 'entry' = 記帳表單的徽章；'shop' = 店家編輯彈窗
+function openIcons(where, now) {
+  iconTarget = where;
+  $('iconTitle').textContent = where === 'shop' ? '換店家圖示' : '圖鑑';
+  Object.entries(btns).forEach(([kk, b]) => b.setAttribute('aria-pressed', kk === now));
+  $('mIcons').classList.add('on');
+  if (btns[now]) btns[now].scrollIntoView({ block: 'center' });
+}
+$('badge').onclick = () => openIcons('entry', cur);
 $('shop').addEventListener('input', () => {
   const k = guess($('shop').value);
   if (k) paint(k, false); else $('guessLbl').textContent = '猜不出來，點左邊挑';
 });
 function payerId() { const b = $('payer').querySelector('[aria-pressed=true]'); return b ? b.dataset.p : (S.me || 'm1'); }
+function mealId() { const b = $('fMeal').querySelector('[aria-pressed=true]'); return b ? b.dataset.m : 'lunch'; }
+function setMeal(k) { $('fMeal').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === (k || 'lunch'))); }
 function buildForm() {
+  const ml = $('fMeal'); ml.innerHTML = '';
+  MEALS.forEach(([k, label, ic]) => {
+    const b = document.createElement('button'); b.dataset.m = k;
+    b.setAttribute('aria-pressed', k === 'lunch' ? 'true' : 'false');
+    b.appendChild(pxc('f', ic, 24));
+    const t = document.createElement('div'); t.className = 't'; t.textContent = label; b.appendChild(t);
+    b.onclick = () => ml.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    ml.appendChild(b);
+  });
   const p = $('payer'); p.innerHTML = '';
   M().forEach(m => {
     const b = document.createElement('button'); b.dataset.p = m.id;
@@ -771,7 +842,7 @@ function resetForm() {
   M().forEach((_, i) => { const el = $('amt' + i); if (el) el.value = ''; });
   $('payer').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === (S.me || 'm1')));
   $('formTitle').textContent = '記錄戰果'; $('btnSave').textContent = '寫入公會帳簿';
-  $('editRow').style.display = 'none'; paint('bento', false);
+  $('editRow').style.display = 'none'; paint('bento', false); setMeal('lunch');
 }
 $('btnCancel').onclick = () => { resetForm(); render(); };
 $('btnDel').onclick = () => { if (editing) { const id = editing; resetForm(); delEntry(id); render(); } };
@@ -780,7 +851,7 @@ $('btnSave').onclick = () => {
   if (!a.some(x => x > 0)) { toast('至少要有一個人的金額'); return; }
   const shop = $('shop').value.trim() || '午餐';
   const row = {
-    id: editing || uid(), date: $('fDate').value || today(), shop, icon: cur,
+    id: editing || uid(), date: $('fDate').value || today(), shop, icon: cur, meal: mealId(),
     payer: payerId(), a1: a[0], a2: a[1], a3: a[2], note: '',
     by: editing ? (alive(S.entries).find(e => e.id === editing) || {}).by || S.me : S.me,
     periodId: editing ? (alive(S.entries).find(e => e.id === editing) || {}).periodId || '' : ''
@@ -793,7 +864,7 @@ $('btnSave').onclick = () => {
 function editEntry(id) {
   const e = alive(S.entries).find(x => x.id === id); if (!e) return;
   editing = id; go('log');
-  $('fDate').value = e.date; $('shop').value = e.shop; paint(e.icon || 'bento', true);
+  $('fDate').value = e.date; $('shop').value = e.shop; paint(e.icon || 'bento', true); setMeal(e.meal);
   $('payer').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === e.payer));
   AK.forEach((k, i) => $('amt' + i).value = (+e[k] || 0) || '');
   $('formTitle').textContent = '改這一筆'; $('btnSave').textContent = '更新';
@@ -806,6 +877,39 @@ function delEntry(id) {
   if (editing === id) resetForm();
   toast('刪了');
 }
+
+/* ================= 店家編輯 ================= */
+let edShop = null, edIcon = 'bento';
+function openShop(s) {
+  edShop = s; edIcon = s.icon || 'bento';
+  $('edName').value = s.name;
+  paintEd();
+  $('mShop').classList.add('on');
+}
+function paintEd() {
+  [...$('edBadge').querySelectorAll('canvas')].forEach(c => c.remove());
+  $('edBadge').insertBefore(pxc('f', edIcon, 32), $('edBadge').firstChild);
+  $('edBadge').querySelector('.k').textContent = LABEL[edIcon] || '選圖示';
+}
+$('edBadge').onclick = () => openIcons('shop', edIcon);
+$('edSave').onclick = () => {
+  if (!edShop) return;
+  const newName = $('edName').value.trim() || edShop.name;
+  const oldName = edShop.name, oldIcon = edShop.icon;
+  put('shops', Object.assign({}, edShop, { name: newName, icon: edIcon }));
+  // 連動：這家店已記過的紀錄一起換圖／改名
+  if (newName !== oldName || edIcon !== oldIcon) {
+    const hit = alive(S.entries).filter(e => e.shop === oldName);
+    if (hit.length) putMany('entries', hit.map(e => Object.assign({}, e, { shop: newName, icon: edIcon })));
+  }
+  $('mShop').classList.remove('on'); edShop = null; toast('改好了');
+};
+$('edDel').onclick = () => {
+  if (!edShop) return;
+  if (!confirm('把「' + edShop.name + '」從名單移除？（已記過的帳不受影響）')) return;
+  put('shops', Object.assign({}, edShop, { deleted: 1 }));
+  $('mShop').classList.remove('on'); edShop = null;
+};
 
 /* ================= 清算 ================= */
 function report() {
@@ -843,6 +947,21 @@ $('btnClose').onclick = () => {
 };
 
 /* ================= 統計 ================= */
+let statWho = '';
+function buildWhoSeg() {
+  const w = $('whoSeg'); w.innerHTML = '';
+  const mk = (id, label, portrait) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-pressed', statWho === id ? 'true' : 'false');
+    b.appendChild(portrait ? pxc('p', portrait, 32) : uic('party', 32, statWho === id ? UGOLD : UDIM));
+    const t = document.createElement('div'); t.className = 't'; t.textContent = label;
+    b.appendChild(t);
+    b.onclick = () => { statWho = id; render(); };
+    return b;
+  };
+  w.appendChild(mk('', '全隊', null));
+  M().forEach(m => w.appendChild(mk(m.id, m.name, m.portrait)));
+}
 const monday = d => { const x = new Date(d); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 let calY, calM;
 (function () { const d = new Date(); calY = d.getFullYear(); calM = d.getMonth(); })();
@@ -877,6 +996,9 @@ function renderCal() {
       const ic = document.createElement('div'); ic.className = 'ic';
       byDay[n].slice(0, 2).forEach(e => ic.appendChild(pxc('f', e.icon || 'bento', 14)));
       d.appendChild(ic);
+      if (byDay[n].some(e => (e.meal || 'lunch') !== 'lunch')) {
+        const dot = document.createElement('span'); dot.className = 'dot'; d.appendChild(dot);
+      }
       const sum = byDay[n].reduce((s, e) => s + eTotal(e), 0);
       const v = document.createElement('div'); v.className = 'v'; v.textContent = sum; d.appendChild(v);
       if (byDay[n].length > 2) { const m2 = document.createElement('div'); m2.className = 'more'; m2.textContent = '+' + (byDay[n].length - 2); d.appendChild(m2); }
@@ -884,23 +1006,34 @@ function renderCal() {
     }
     c.appendChild(d);
   }
-  const all = Object.values(byDay).flat();
-  const tot = all.reduce((s, e) => s + eTotal(e), 0);
-  const shopCount = {}; all.forEach(e => shopCount[e.shop] = (shopCount[e.shop] || 0) + 1);
+  const mi2 = statWho ? mIdx(statWho) : -1;
+  const amt2 = e => mi2 < 0 ? eTotal(e) : (+e[AK[mi2]] || 0);
+  const all = Object.values(byDay).flat().filter(e => amt2(e) > 0);
+  const lun = all.filter(e => (e.meal || 'lunch') === 'lunch');
+  const tot = lun.reduce((s, e) => s + amt2(e), 0);
+  const per2 = mi2 < 0 ? 3 : 1;
+  const shopCount = {}; lun.forEach(e => shopCount[e.shop] = (shopCount[e.shop] || 0) + 1);
   const top = Object.entries(shopCount).sort((a, b) => b[1] - a[1])[0];
-  const mx2 = all.slice().sort((a, b) => eTotal(b) - eTotal(a))[0];
-  $('mSub').textContent = (calM + 1) + ' 月';
+  const mx2 = lun.slice().sort((a, b) => amt2(b) - amt2(a))[0];
+  $('mSub').textContent = (statWho ? mName(statWho) : '全隊') + '・' + (calM + 1) + ' 月';
   $('mkvs').innerHTML = '';
-  [['本月總計', all.length ? nt(tot) + ' 元' : '—'],
-   ['吃了幾餐', all.length + ' 餐'],
-   ['每人本月', all.length ? nt(tot / 3) + ' 元' : '—'],
-   ['每人每餐', all.length ? nt(tot / all.length / 3) + ' 元' : '—'],
-   ['最貴的一天', mx2 ? md(mx2.date) + ' ' + mx2.shop + ' ' + nt(eTotal(mx2)) : '—'],
+  [[statWho ? '本月午餐' : '本月全隊', lun.length ? nt(tot) + ' 元' : '—'],
+   [statWho ? '你吃了' : '吃了幾餐', lun.length + ' 餐'],
+   [statWho ? '每餐平均' : '每人每餐', lun.length ? nt(tot / lun.length / per2) + ' 元' : '—'],
+   ['最貴的一餐', mx2 ? md(mx2.date) + ' ' + mx2.shop + ' ' + nt(amt2(mx2)) : '—'],
    ['最常吃', top ? top[0] + ' ' + top[1] + ' 次' : '—']].forEach(([k, v]) => {
     const d = document.createElement('div'); d.className = 'kv';
     d.innerHTML = '<span class="k">' + esc(k) + '</span><span>' + esc(v) + '</span>';
     $('mkvs').appendChild(d);
   });
+  const oth = MEALS.slice(1).map(([mk, label]) => {
+    const list = all.filter(e => e.meal === mk);
+    return list.length ? label + ' ' + list.length + ' 次 ' + nt(list.reduce((s, e) => s + amt2(e), 0)) + ' 元' : null;
+  }).filter(Boolean);
+  if (oth.length) {
+    const o = document.createElement('div'); o.className = 'other';
+    o.textContent = '另有　' + oth.join('　・　'); $('mkvs').appendChild(o);
+  }
 }
 function openDay(iso, list) {
   $('dayTitle').textContent = md(iso) + '　' + list.length + ' 筆';
@@ -913,8 +1046,9 @@ function entryEl(e) {
   d.appendChild(pxc('f', e.icon || 'bento', 24));
   const t = document.createElement('div'); t.className = 't';
   const split = M().map((m, i) => (+e[AK[i]] ? nt(e[AK[i]]) : '–')).join('/');
+  const tag = (e.meal || 'lunch') !== 'lunch' ? '<span style="color:var(--gold)">［' + mealName(e.meal) + '］</span>' : '';
   t.innerHTML = '<div class="s1">' + md(e.date) + '　' + esc(e.shop) + '</div>' +
-    '<div class="s2">' + esc(mName(e.payer)) + ' 先付・' + split + '</div>';
+    '<div class="s2">' + tag + esc(mName(e.payer)) + ' 先付・' + split + '</div>';
   const a = document.createElement('div'); a.className = 'a';
   a.innerHTML = '<b>' + nt(eTotal(e)) + '</b>' + (e.by ? esc(mName(e.by)) + ' 記' : '');
   d.append(t, a);
@@ -999,25 +1133,30 @@ function render() {
   if (!list.length) lg.innerHTML = '<div class="zero">本期還沒記過。<br>去「遭遇」抽一家，或直接到「記錄」寫。</div>';
   else list.forEach(e => lg.appendChild(entryEl(e)));
 
-  // 口袋名單
+  // 口袋名單：最久沒吃的排前面，預設只露 5 家
   const rec = lastEaten(), shops = alive(S.shops).slice()
     .sort((a, b) => (rec[b.name] == null ? 9e3 : rec[b.name]) - (rec[a.name] == null ? 9e3 : rec[a.name]));
   $('shopCnt').textContent = shops.length + ' 家';
   const sb = $('shops'); sb.innerHTML = '';
   if (!shops.length) sb.innerHTML = '<div class="zero">還沒有店家。加幾家常吃的進來。</div>';
-  shops.forEach(s => {
-    const d = document.createElement('div'); d.className = 'e';
+  const show = shopsOpen ? shops : shops.slice(0, 5);
+  show.forEach(s => {
+    const d = document.createElement('button'); d.className = 'e';
     d.appendChild(pxc('f', s.icon || 'bento', 24));
     const t = document.createElement('div'); t.className = 't';
     t.innerHTML = '<div class="s1">' + esc(s.name) + '</div>';
     const a = document.createElement('div'); a.className = 'a';
     const dd = rec[s.name];
     a.textContent = dd == null ? '沒記過' : dd === 0 ? '今天' : dd === 1 ? '昨天' : dd + ' 天前';
-    const del = document.createElement('button'); del.textContent = '刪';
-    del.style.cssText = 'font-size:11px;color:var(--dim);padding:6px;flex:none';
-    del.onclick = () => { if (confirm('把「' + s.name + '」從名單移除？')) put('shops', Object.assign({}, s, { deleted: 1 })); };
-    d.append(t, a, del); sb.appendChild(d);
+    d.append(t, a);
+    d.onclick = () => openShop(s);
+    sb.appendChild(d);
   });
+  const more = $('moreShops');
+  if (shops.length > 5) {
+    more.style.display = '';
+    more.textContent = shopsOpen ? '收起來 ▲' : '還有 ' + (shops.length - 5) + ' 家 ▼';
+  } else more.style.display = 'none';
 
   // 清算
   $('stRange').textContent = list.length ? md(ds[0]) + '–' + md(ds[ds.length - 1]) + '・' + nt(list.reduce((s, e) => s + eTotal(e), 0)) + ' 元' : '';
@@ -1063,8 +1202,16 @@ function render() {
 
   // 統計：週
   const all = alive(S.entries);
+  const isL = e => (e.meal || 'lunch') === 'lunch';
+  const lunch = all.filter(isL);
+  // statWho: '' = 全隊，否則是 member id
+  const mi = statWho ? mIdx(statWho) : -1;
+  const amt = e => mi < 0 ? eTotal(e) : (+e[AK[mi]] || 0);
+  const joined = e => mi < 0 ? eTotal(e) > 0 : (+e[AK[mi]] || 0) > 0;
+
+  const scope = lunch.filter(joined);
   const wk = {};
-  all.forEach(e => { const k = monday(e.date); wk[k] = (wk[k] || 0) + eTotal(e); });
+  scope.forEach(e => { const k = monday(e.date); wk[k] = (wk[k] || 0) + amt(e); });
   const weeks = [];
   const base = monday(today());
   for (let i = 7; i >= 0; i--) {
@@ -1076,24 +1223,39 @@ function render() {
   const ch = $('chart'); ch.innerHTML = '';
   weeks.forEach(([k, v], i) => {
     const c = document.createElement('div'); c.className = 'col' + (i === 7 ? ' now' : '');
-    c.innerHTML = '<div class="v">' + (v ? v : '') + '</div><div class="b" style="height:' + Math.round(v / wmax * 80) + '%"></div>' +
-      '<div class="x">' + md(k).replace('/', '/') + '</div>';
+    c.innerHTML = '<div class="v">' + (v ? v : '') + '</div><div class="b" style="height:' +
+      Math.round(v / wmax * 80) + '%"></div><div class="x">' + md(k) + '</div>';
     ch.appendChild(c);
   });
+
+  const inRange = e => weeks.some(w => monday(e.date) === w[0]);
+  const rs = scope.filter(inRange);
   const wsum = weeks.reduce((s, w) => s + w[1], 0);
   const active = weeks.filter(w => w[1] > 0).length;
-  const meals = all.filter(e => weeks.some(w => monday(e.date) === w[0])).length;
+  const per = mi < 0 ? 3 : 1;
+  $('chartSub').textContent = statWho ? mName(statWho) + '・午餐' : '全隊・午餐';
+  $('kvSub').textContent = '近 8 週';
   $('kvs').innerHTML = '';
-  [['每週平均', active ? nt(wsum / active) + ' 元' : '—'],
-   ['每人每週', active ? nt(wsum / active / 3) + ' 元' : '—'],
-   ['每人每餐', meals ? nt(wsum / meals / 3) + ' 元' : '—'],
+  [[statWho ? '每週花費' : '每週全隊', active ? nt(wsum / active) + ' 元' : '—'],
+   [statWho ? '每餐平均' : '每人每餐', rs.length ? nt(wsum / rs.length / per) + ' 元' : '—'],
    ['近 8 週合計', nt(wsum) + ' 元'],
-   ['總共記錄', all.length + ' 餐']].forEach(([k, v]) => {
+   [statWho ? '你吃了' : '全隊記錄', rs.length + ' 餐']].forEach(([k, v]) => {
     const d = document.createElement('div'); d.className = 'kv';
     d.innerHTML = '<span class="k">' + esc(k) + '</span><span>' + esc(v) + '</span>'; $('kvs').appendChild(d);
   });
+  // 非午餐一行帶過
+  const others = MEALS.slice(1).map(([mk, label]) => {
+    const list = all.filter(e => e.meal === mk && joined(e) && inRange(e));
+    return list.length ? label + ' ' + list.length + ' 次 ' + nt(list.reduce((s, e) => s + amt(e), 0)) + ' 元' : null;
+  }).filter(Boolean);
+  if (others.length) {
+    const o = document.createElement('div'); o.className = 'other';
+    o.textContent = '另有　' + others.join('　・　');
+    $('kvs').appendChild(o);
+  }
+
   const cnt = {};
-  all.forEach(e => { const key = e.shop || '?'; (cnt[key] = cnt[key] || { c: 0, icon: e.icon }).c++; });
+  scope.forEach(e => { const key = e.shop || '?'; (cnt[key] = cnt[key] || { c: 0, icon: e.icon }).c++; });
   const rk = $('rank'); rk.innerHTML = '';
   const top = Object.entries(cnt).sort((a, b) => b[1].c - a[1].c).slice(0, 5);
   if (!top.length) rk.innerHTML = '<div class="zero">還沒有資料。</div>';
@@ -1104,6 +1266,7 @@ function render() {
     const cc = document.createElement('div'); cc.className = 'c'; cc.textContent = o.c + ' 次';
     d.append(nn, cc); rk.appendChild(d);
   });
+  buildWhoSeg();
   renderCal();
 }
 
