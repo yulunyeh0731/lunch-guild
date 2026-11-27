@@ -105,7 +105,7 @@ def integrate(src, PREVIEW=False):
     patch("    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0 });",
           "    const SLOT = { eric: [150, 134, 2], yulun: [20, 160, 2], karen: [188, 262, 3] }[k] || [0, 0, 1];\n"
           "    d.style.left = SLOT[0] + 'px'; d.style.top = SLOT[1] + 'px'; d.style.zIndex = SLOT[2];\n"
-          "    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0, z0: SLOT[2] });")
+          "    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0, z0: SLOT[2], m });")
 
     # ---- 人物影子：放在腳底下（框底往下露 7px）、加寬加深 ----
     patch(r'#bparty \.u \.sh\{position:absolute;left:50%;bottom:4px;transform:translateX\(-50%\);\s*width:46px;height:18px;opacity:\.45;z-index:1\}',
@@ -129,6 +129,32 @@ function skipBattle() {
   battleEnd();
 }
 $('stage').addEventListener('click', () => { if (rolling && BT.length) skipBattle(); });
+// 命中時跳出「這個人在這家店平均花多少」；第一次來的店顯示「初見」
+function shopStats(name) {
+  const es = alive(S.entries).filter(e => e.shop === name);
+  const per = M().map((m, i) => { const v = es.map(e => +e[AK[i]] || 0).filter(x => x > 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; });
+  const all = es.flatMap(e => AK.map(k => +e[k] || 0)).filter(x => x > 0);
+  const avg = all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : null;
+  const last = es.map(e => e.date).sort().pop() || null;
+  return { n: es.length, per, avg, last };
+}
+function showDmg(u) {
+  if (!foeShop || !u.m) return;
+  const st = $('stage'), sr = st.getBoundingClientRect(), f = $('foeIcon').getBoundingClientRect();
+  const v = shopStats(foeShop.name).per[mIdx(u.m.id)];
+  const d = document.createElement('div'); d.className = 'dmg';
+  d.innerHTML = '<small>' + esc(u.m.name) + (v == null ? '' : ' 平均') + '</small>' + (v == null ? '初見！' : '$' + nt(v));
+  d.style.left = (f.left + f.width / 2 - sr.left - st.clientLeft - 34 + (Math.random() * 20 - 10)) + 'px';
+  d.style.top = (f.top - sr.top - st.clientTop - 6) + 'px';
+  st.appendChild(d); setTimeout(() => d.remove(), 1100);
+}
+function showVictory() {
+  const st = $('stage');
+  document.querySelectorAll('.vic, .dmg').forEach(x => x.remove());
+  const v = document.createElement('div'); v.className = 'vic';
+  v.innerHTML = '<div class="t">勝利！</div><div class="s">' + esc(foeShop.name) + ' 被打倒了</div>';
+  st.appendChild(v); $('foe').classList.add('down');
+}
 function bump() { const st = $('stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }
     function attackOne(u, done) {
       idleOn = false;
@@ -138,7 +164,6 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
         // 衝刺 → 舉劍 → 揮下（劍尖剛好砍到敵人）→ 跳回
         const dx = (f.left + f.width * 0.38) - (s.left + s.width * 0.95);
         const dy = (f.top + f.height * 0.78) - (s.top + s.height * 0.78);
-        $('plate').style.transition = 'opacity .12s'; $('plate').style.opacity = '.25';
         u.d.style.zIndex = 9;
         u.d.style.transition = 'transform .24s steps(5)';
         u.d.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
@@ -146,9 +171,9 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
         bt(() => {
           draw(u.cv, SPR.eric_hit, SPAL.eric);
           fxDraw('cleave', 150, 150, f.left + f.width / 2 - 75, f.top + f.height / 2 - 75);
-          hitFoe(); bump();
+          hitFoe(); bump(); showDmg(u);
         }, 380);
-        bt(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); $('plate').style.opacity = ''; }, 820);
+        bt(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); }, 820);
         bt(() => { u.d.style.transition = ''; u.d.style.zIndex = u.z0; }, 1100);
         fin(1120);
       } else if (u.k === 'yulun') {
@@ -168,7 +193,7 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
             const tx = 2 * (1 - t) * (cx - x0) + 2 * t * (x1 - cx), ty = 2 * (1 - t) * (cy - y0) + 2 * t * (y1 - cy);
             d.style.left = (x - 12) + 'px'; d.style.top = (y - 33) + 'px';
             d.style.transform = 'rotate(' + (Math.atan2(tx, -ty) * 180 / Math.PI) + 'deg)';
-            if (k === N) { d.remove(); fxDraw('slash', 96, 96, x1 - 48, y1 - 48); hitFoe(); bump(); }
+            if (k === N) { d.remove(); fxDraw('slash', 96, 96, x1 - 48, y1 - 48); hitFoe(); bump(); showDmg(u); }
           }, k * 45);
         }, 460);
         fin(1250);
@@ -189,7 +214,7 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
         }, 420);
         bt(() => {
           fxDraw('magic', 122, 128, f.left + f.width / 2 - 61, f.top + f.height / 2 - 64);
-          hitFoe(); bump();
+          hitFoe(); bump(); showDmg(u);
         }, 980);
         fin(1450);
       }
@@ -201,8 +226,8 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
     # 依序攻擊：Eric → Yulun → Karen，一個做完再換下一個
     i = h.index("  units.forEach((u, i) => setTimeout(() => attackOne(u, i === units.length - 1 ? () => {")
     j = h.index("function applyEncStyle()")
-    END_PREVIEW = "rolling = false; type($('talk'), '決定吃「' + foeShop.name + '」！\\u3000（預覽：再按一次「就這家」可重播）');"
-    END_INDEX = "rolling = false; decide();"      # 打完停在遭遇畫面，由玩家決定要不要馬上記帳
+    END_PREVIEW = "rolling = false; showVictory(); type($('talk'), '決定吃「' + foeShop.name + '」！\\u3000（預覽：再按一次「就這家」可重播）');"
+    END_INDEX = "rolling = false; showVictory(); decide();"      # 打完停在遭遇畫面，由玩家決定要不要馬上記帳
     h = h[:i] + """  const order = ['eric', 'yulun', 'karen'].map(k => units.find(u => u.k === k)).filter(Boolean);
       units.forEach(u => { if (!order.includes(u)) order.push(u); });
       const next = (n) => {
@@ -219,6 +244,7 @@ function bump() { const st = $('stage'); st.classList.remove('shake'); void st.o
     h = h.replace('const FXPAL=', 'const FXPAL0=', 1)
     h = h.replace('/* ---- 抽籤 ---- */', 'const FX = Object.assign({}, FX0, { mcircle: %s }); const FXPAL = Object.assign({}, FXPAL0, { mcircle: %s });\n/* ---- 抽籤 ---- */'
                   % (json.dumps(MCIRCLE), json.dumps(MCPAL)), 1)
+    patch('.fx.magic.go{', '.dmg{position:absolute;z-index:8;width:68px;text-align:center;font-size:22px;line-height:1;color:#fff;pointer-events:none;text-shadow:2px 0 #1a1020,-2px 0 #1a1020,0 2px #1a1020,0 -2px #1a1020,2px 2px #1a1020,-2px 2px #1a1020,2px -2px #1a1020,-2px -2px #1a1020;animation:bdmg 1.05s steps(10) 1 forwards}\n.dmg small{display:block;font-size:11px;margin-bottom:2px;color:#f4d27a}\n@keyframes bdmg{0%{transform:translateY(8px) scale(.6);opacity:0}15%{transform:translateY(-6px) scale(1.15);opacity:1}30%{transform:translateY(-10px) scale(1)}75%{opacity:1}100%{transform:translateY(-22px);opacity:0}}\n.vic{position:absolute;left:50%;top:112px;transform:translateX(-50%);z-index:9;text-align:center;pointer-events:none;animation:bvic .5s steps(5) 1}\n.vic .t{font-size:33px;line-height:1.1;color:#f4d27a;letter-spacing:4px;text-shadow:3px 0 #2a1408,-3px 0 #2a1408,0 3px #2a1408,0 -3px #2a1408,3px 3px #2a1408,-3px 3px #2a1408,3px -3px #2a1408,-3px -3px #2a1408}\n.vic .s{margin-top:6px;font-size:11px;color:#fff;background:rgba(14,18,40,.84);border:2px solid #c9a35a;padding:4px 10px;display:inline-block;white-space:nowrap}\n@keyframes bvic{0%{transform:translateX(-50%) scale(2.2);opacity:0}60%{transform:translateX(-50%) scale(.9);opacity:1}100%{transform:translateX(-50%) scale(1)}}\n#foe.down canvas,#foe.down img{opacity:.38;filter:grayscale(1);transition:opacity .3s}\n.fx.magic.go{')
     patch('.fx.magic.go{', '.fx.mcircle.go{animation:bmc .95s steps(6) 1 forwards}\n'
           '@keyframes bmc{0%{opacity:0;transform:scale(.25)}25%{opacity:1;transform:scale(1)}50%{opacity:.75}70%{opacity:1}100%{opacity:0;transform:scale(1.08)}}\n.fx.magic.go{')
 
