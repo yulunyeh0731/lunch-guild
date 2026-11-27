@@ -292,6 +292,64 @@ def icon_chart():
     return [''.join(r) for r in g]
 
 
+def ring_mask(cx, cy, r0, r1, a0, a1):
+    yy, xx = np.mgrid[0:NI, 0:NI]
+    d = np.hypot(xx + .5 - cx, yy + .5 - cy)
+    a = np.degrees(np.arctan2(yy + .5 - cy, xx + .5 - cx))
+    return (d >= r0) & (d <= r1) & (a >= a0) & (a <= a1)
+
+
+def icon_bow():
+    limb = ring_mask(3.5, 8, 9.3, 11.3, -62, 62)
+    g = icon_from([(limb, 2)])
+    g = [list(r) for r in g]
+    # 弓弦（直線）、搭在弦上的箭（往右）
+    for y in range(1, 15):
+        if g[y][8] == '.': g[y][8] = '4'
+    for x in range(3, 14):
+        g[8][x] = '3'
+    for (x, y) in [(13, 7), (14, 8), (13, 9), (15, 8)]:
+        g[y][x] = '3'
+    g[7][12] = '1'; g[9][12] = '1'
+    for (x, y) in [(2, 7), (3, 7), (2, 9), (3, 9), (1, 7), (1, 9)]:
+        g[y][x] = '2'
+    for (x, y) in [(1, 6), (1, 10), (2, 6), (2, 10), (0, 7), (0, 9), (4, 7), (4, 9)]:
+        if g[y][x] == '.': g[y][x] = '1'
+    g[8][2] = '1'
+    return [''.join(r) for r in g]
+
+
+def icon_shield():
+    sh = im16(pts=[(2, 1.5), (8, 0.5), (14, 1.5), (14, 8), (11.5, 12.5), (8, 15), (4.5, 12.5), (2, 8)])
+    inner = im16(pts=[(4, 3), (8, 2.3), (12, 3), (12, 8), (10, 11.3), (8, 13), (6, 11.3), (4, 8)])
+    g = icon_from([(sh, 1)])
+    g = [list(r) for r in g]
+    for y in range(NI):
+        for x in range(NI):
+            if inner[y, x]:
+                g[y][x] = '3' if x < 8 else '4'
+    for y in range(3, 13):                     # 中間十字
+        if inner[y, 8]: g[y][8] = '2'
+    for x in range(4, 13):
+        if inner[6, x]: g[6][x] = '2'
+    g[6][8] = '3'
+    return [''.join(r) for r in g]
+
+
+def icon_staff():
+    orb = im16(ell=(4.5, 0.5, 11.5, 7.5))
+    shaft = im16(box=(7, 7, 8, 15))
+    prong = im16(pts=[(4, 5), (5.5, 4), (7, 8), (9, 8), (10.5, 4), (12, 5), (9.5, 9.5), (6.5, 9.5)])
+    g = icon_from([(shaft, 1), (prong, 2), (orb, 3)])
+    g = [list(r) for r in g]
+    g[2][6] = '3'; g[2][7] = '3'; g[3][6] = '3'        # 寶珠反光
+    for (x, y) in [(9, 5), (10, 4), (9, 4)]:
+        if g[y][x] in '234': g[y][x] = '4'
+    return [''.join(r) for r in g]
+
+
+CLASS_ICONS = {'bow': icon_bow, 'shield': icon_shield, 'staff': icon_staff}
+
 NAV_ICONS = {'party': icon_party, 'dice': icon_dice, 'quill': icon_quill, 'coin': icon_coin, 'chart': icon_chart}
 
 

@@ -4,5 +4,6 @@ src/*.png
 !src/bgtown_street.png
 !src/icon-180.png
 !src/icon-crest.png
+!src/port_*.png
 __pycache__/
 *.pyc

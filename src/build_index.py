@@ -18,7 +18,7 @@ h = fix20.apply(h)                     # v2.0 邏輯修正
 h = appicon.apply(h)                   # v2.0 App 圖示
 h = join20.apply(h)                    # v2.0.3 網址內建，只打通關密語
 h = layout203.apply(h)                 # v2.0.4 遭遇頁塞進一個螢幕
-h = uiapply.apply(h)                   # v2.1 新選單圖示（頭像小改待確認）
+h = uiapply.apply(h)                   # v2.1 選單／職業圖示、頭像（光影＋戰鬥服裝）
 open(REPO + 'index.html', 'w', encoding='utf-8').write(h)
 
 # 本機測試版（假資料、獨立儲存，不進 repo）：python3 src/testindex.py 會用它跑一次完整流程
