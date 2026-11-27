@@ -93,8 +93,25 @@ CHART_CSS = """.chart{gap:7px}
 .pay .ar canvas{width:80px;height:24px}"""
 
 
+def _fix_frames(h):
+    """所有金框（.win 視窗、原本的 .stage）用的 border-image 是同一張畫錯的 12×12 小圖：右邊第 3～8 列少了金色和暗金兩格，
+    所以每個視窗右邊的金框都不見。v2.1.2 只修了 .stage；這裡把整份 index 裡這張壞圖都換成修好的 stage-frame.png。"""
+    import re, base64, io, os
+    good = base64.b64encode(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stage-frame.png'), 'rb').read()).decode()
+    bad = set()
+    for b in re.findall(r'border-image:url\(data:image/png;base64,([A-Za-z0-9+/=]+)\)', h):
+        im = Image.open(io.BytesIO(base64.b64decode(b))).convert('RGBA')
+        if im.size == (12, 12) and im.getpixel((10, 5))[3] == 0 and im.getpixel((1, 5))[3] > 0:   # 右邊少金色 = 壞圖
+            bad.add(b)
+    for b in bad:
+        h = h.replace(b, good)
+    return h, len(bad)
+
+
 def apply(h):
     import json, uiapply
+    h, nbad = _fix_frames(h)
+    assert nbad >= 1, 'no broken frame found'
     _, _, icon = uiapply._grab(h, 'ICON')
     icon['arrowL'] = arrow(True); icon['arrowR'] = arrow(False); icon['payArrow'] = pay_arrow()
     h = uiapply._put(h, 'ICON', icon)
