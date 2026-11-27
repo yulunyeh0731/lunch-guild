@@ -4,7 +4,7 @@
 import os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import battle34
+import battle34, app34
 REPO = os.path.dirname(HERE) + os.sep
 BASE = REPO + 'index-v1.3-backview.html'
 if not os.path.exists(BASE):
@@ -12,6 +12,7 @@ if not os.path.exists(BASE):
 src = open(BASE, encoding='utf-8').read()
 assert 'ARROW_FX' not in src, '輸入檔已經是整合過的版本'
 h = battle34.integrate(src, PREVIEW=False)
+h = app34.apply(h)                     # v1.5 起的 app 修正
 open(REPO + 'index.html', 'w', encoding='utf-8').write(h)
 
 # 本機測試版（假資料、獨立儲存，不進 repo）：python3 src/testindex.py 會用它跑一次完整流程

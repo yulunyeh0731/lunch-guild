@@ -285,6 +285,9 @@ nav button[aria-pressed=true] canvas{opacity:1}
 .note{color:#eef2fd;font-size:11px;line-height:1.9;margin:2px 0 14px;padding:7px 9px;
       background:rgba(9,12,26,.76);border:var(--px) solid rgba(226,191,104,.4)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.e.locked{opacity:.72}
+.e .lk{display:inline-block;font-size:11px;line-height:1;padding:2px 4px;margin-right:4px;border:1px solid var(--dim,#8a8fa8);color:var(--dim,#8a8fa8);vertical-align:1px}
+.e .a .undo{display:block;margin:6px 0 0 auto;width:auto;padding:4px 10px;font-size:11px}
 </style>
 </head>
 <body>
@@ -860,7 +863,7 @@ function buildParty() {
     const SLOT = { eric: [150, 134, 2], yulun: [20, 160, 2], karen: [188, 262, 3] }[k] || [0, 0, 1];
     d.style.left = SLOT[0] + 'px'; d.style.top = SLOT[1] + 'px'; d.style.zIndex = SLOT[2];
     d.append(cv, sh); box.appendChild(d);
-    units.push({ k, d, cv, frame: 0 });
+    units.push({ k, d, cv, frame: 0, z0: SLOT[2] });
   });
   units.forEach(u => draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]));
   shadowInto($('foeShadow'), 78, 32);
@@ -875,11 +878,23 @@ function hitFoe() {
   setTimeout(() => $('foe').classList.remove('hit'), 400);
 }
 const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
-    function bump() { const st = $('stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }
+    // 攻擊動畫的計時器都經過 bt()，點畫面時 skipBattle() 可以一次清掉、直接跳到結果
+let BT = [];
+function bt(fn, ms) { const id = setTimeout(() => { BT = BT.filter(x => x !== id); fn(); }, ms); BT.push(id); return id; }
+function skipBattle() {
+  if (!BT.length) return;
+  BT.forEach(clearTimeout); BT = [];
+  document.querySelectorAll('#fx .fx, #stage .fx').forEach(x => x.remove());
+  units.forEach(u => { u.d.style.transition = ''; u.d.style.transform = ''; u.d.style.zIndex = u.z0; draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); });
+  $('plate').style.transition = ''; $('plate').style.opacity = ''; idleOn = true;
+  battleEnd();
+}
+$('stage').addEventListener('click', () => { if (rolling && BT.length) skipBattle(); });
+function bump() { const st = $('stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }
     function attackOne(u, done) {
       idleOn = false;
       const f = $('foeIcon').getBoundingClientRect(), s = u.cv.getBoundingClientRect();
-      const fin = (ms) => setTimeout(() => { draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); idleOn = true; if (done) done(); }, ms);
+      const fin = (ms) => bt(() => { draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); idleOn = true; if (done) done(); }, ms);
       if (u.k === 'eric') {
         // 衝刺 → 舉劍 → 揮下（劍尖剛好砍到敵人）→ 跳回
         const dx = (f.left + f.width * 0.38) - (s.left + s.width * 0.95);
@@ -888,19 +903,19 @@ const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
         u.d.style.zIndex = 9;
         u.d.style.transition = 'transform .24s steps(5)';
         u.d.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
-        setTimeout(() => draw(u.cv, SPR.eric_atk, SPAL.eric), 120);
-        setTimeout(() => {
+        bt(() => draw(u.cv, SPR.eric_atk, SPAL.eric), 120);
+        bt(() => {
           draw(u.cv, SPR.eric_hit, SPAL.eric);
           fxDraw('cleave', 150, 150, f.left + f.width / 2 - 75, f.top + f.height / 2 - 75);
           hitFoe(); bump();
         }, 380);
-        setTimeout(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); $('plate').style.opacity = ''; }, 820);
-        setTimeout(() => { u.d.style.transition = ''; u.d.style.zIndex = 2; }, 1100);
+        bt(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); $('plate').style.opacity = ''; }, 820);
+        bt(() => { u.d.style.transition = ''; u.d.style.zIndex = u.z0; }, 1100);
         fin(1120);
       } else if (u.k === 'yulun') {
         // 拉弓（轉正）→ 放箭：箭走淺拋物線，避開 Eric 頭頂
         draw(u.cv, SPR.yulun_draw, SPAL.yulun);
-        setTimeout(() => {
+        bt(() => {
           draw(u.cv, SPR.yulun_rel, SPAL.yulun);
           const x0 = s.left + s.width * ARROW_FX, y0 = s.top + s.height * ARROW_FY;
           const x1 = f.left + f.width * 0.45, y1 = f.top + f.height * 0.55;
@@ -909,7 +924,7 @@ const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
           const cv = document.createElement('canvas'); draw(cv, FX.arrow, FXPAL.arrow);
           cv.style.width = '24px'; cv.style.height = '66px'; d.appendChild(cv); $('fx').appendChild(d);
           const N = 8;
-          for (let k = 0; k <= N; k++) setTimeout(() => {
+          for (let k = 0; k <= N; k++) bt(() => {
             const t = k / N, x = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, y = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1;
             const tx = 2 * (1 - t) * (cx - x0) + 2 * t * (x1 - cx), ty = 2 * (1 - t) * (cy - y0) + 2 * t * (y1 - cy);
             d.style.left = (x - 12) + 'px'; d.style.top = (y - 33) + 'px';
@@ -921,7 +936,7 @@ const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
       } else {
         // 舉杖蓄力（寶珠亮）→ 施法：敵人腳下出現魔法陣 → 爆開
         draw(u.cv, SPR.karen_raise, SPAL.karen);
-        setTimeout(() => {
+        bt(() => {
           draw(u.cv, SPR.karen_cast, SPAL.karen);
           // 魔法陣是地上的圖案：畫在舞台地面層（人物和敵人下面）
           const sh = $('foeShadow').getBoundingClientRect(), st = $('stage'), sr = st.getBoundingClientRect();
@@ -931,9 +946,9 @@ const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
           d.style.left = (sh.left + sh.width / 2 - 88 - sr.left - st.clientLeft) + 'px';
           d.style.top = (sh.top + sh.height / 2 - 38 - sr.top - st.clientTop) + 'px';
           d.style.zIndex = 2; st.appendChild(d); void d.offsetWidth; d.classList.add('go');
-          setTimeout(() => d.remove(), 1000);
+          bt(() => d.remove(), 1000);
         }, 420);
-        setTimeout(() => {
+        bt(() => {
           fxDraw('magic', 122, 128, f.left + f.width / 2 - 61, f.top + f.height / 2 - 64);
           hitFoe(); bump();
         }, 980);
@@ -943,7 +958,18 @@ const ARROW_FX = 0.7734, ARROW_FY = 0.3250;
 
     const FX = Object.assign({}, FX0, { mcircle: ["...............22222222222222...............", "..........22222.31111111111..22222..........", ".......222..1111.....11.....11113.222.......", ".....22.311..........11..........11..22.....", "...222.11............11............11.222...", "..22.11..............11..............11.22..", ".22.11................................11.22.", "22211..................................11222", "22.1111111111111............1111111111111.22", "22.1111111111111............1111111111111.22", "22211..................................11222", ".22.11................................11.22.", "..22.11..............11..............11.22..", "...222.11............11............11.222...", ".....22..11..........11..........11..22.....", ".......2223.1111.....11.....1111..222.......", "..........22222.31111111111..22222..........", "...............22222222222222..............."] }); const FXPAL = Object.assign({}, FXPAL0, { mcircle: ["", "#3aa6a3", "#86e4db", "#e6fffb"] });
 /* ---- 抽籤 ---- */
-let rolling = false, foeShop = null;
+let rolling = false, foeShop = null, decided = false;
+function setDecided(on) {
+  decided = on;
+  $('btnOk').textContent = on ? '記一筆' : '就這家';
+  $('btnNo').textContent = on ? '再抽一次' : (battleMode() ? '逃跑' : '再抽一次');
+}
+function decide() {
+  setDecided(true);
+  if (!editing && foeShop) { $('shop').value = foeShop.name; paint(ic(foeShop.icon), false); }
+  $('foeSub').textContent = '今天就吃這家'; $('encSub').textContent = '今天就吃這家';
+  type($('talk'), '決定吃「' + foeShop.name + '」！\u3000店名先幫你填好了，吃完再記也可以。');
+}
 const battleMode = () => S.cfg.enc !== 'classic';
 function pickShop() {
   const all = alive(S.shops);
@@ -964,10 +990,11 @@ function showFoe(s, rec, relaxed) {
   const sub = (d == null ? '還沒記過這家' : d === 0 ? '今天已經吃過了' : d === 1 ? '昨天才吃過' : d + ' 天前吃過')
     + (relaxed ? '（名單都吃遍了）' : '');
   $('foeSub').textContent = sub; $('encSub').textContent = sub;
-  $('shop').value = s.name; paint(key, false);
   if (navigator.vibrate) navigator.vibrate(16);
 }
 function roll() {
+  if (rolling) return;
+  setDecided(false);
   const p = pickShop();
   if (!p) { toast('先在下面加幾家店'); return; }
   if (rolling) return;
@@ -1006,6 +1033,7 @@ function roll() {
 $('btnRoll').onclick = roll;
 $('btnNo').onclick = () => {
   if (rolling) return;
+  if (decided) { roll(); return; }
   if (battleMode() && foeShop) {
     type($('talk'), RUNLINES[Math.floor(Math.random() * RUNLINES.length)]);
     setTimeout(roll, 700);
@@ -1013,23 +1041,25 @@ $('btnNo').onclick = () => {
 };
 $('btnOk').onclick = () => {
   if (!foeShop) { toast('先抽一家'); return; }
-  if (!battleMode()) { go('log'); return; }
+  if (decided) { go('log'); return; }
+  if (!battleMode()) { decide(); return; }
   if (rolling) return;
   rolling = true;
-  type($('talk'), '隊伍發動攻擊！');
+  type($('talk'), '隊伍發動攻擊！（點畫面可以跳過）');
   const order = ['eric', 'yulun', 'karen'].map(k => units.find(u => u.k === k)).filter(Boolean);
       units.forEach(u => { if (!order.includes(u)) order.push(u); });
       const next = (n) => {
-        if (n >= order.length) { type($('talk'), '決定吃「' + foeShop.name + '」！\u3000隊伍朝店家前進。', () => { rolling = false; setTimeout(() => go('log'), 500); }); return; }
-        attackOne(order[n], () => setTimeout(() => next(n + 1), 260));
+        if (n >= order.length) { battleEnd(); return; }
+        attackOne(order[n], () => bt(() => next(n + 1), 260));
       };
-      setTimeout(() => next(0), 200);
+      bt(() => next(0), 200);
     };
+    function battleEnd() { rolling = false; decide(); }
     function applyEncStyle() {
   const b = battleMode();
   $('stage').style.display = b ? '' : 'none';
   $('classicEnc').style.display = b ? 'none' : '';
-  $('btnNo').textContent = b ? '逃跑' : '再抽一次';
+  $('btnNo').textContent = decided ? '再抽一次' : (b ? '逃跑' : '再抽一次');
   $('btnRoll').textContent = b ? '遭遇一家店' : '抽一家';
   if (b && !units.length) buildParty();
 }
@@ -1137,10 +1167,12 @@ $('btnSave').onclick = () => {
   put('entries', row);
   if (!alive(S.shops).some(s => s.name === shop)) put('shops', { id: uid(), name: shop, icon: cur, by: S.me });
   else { const sh = alive(S.shops).find(s => s.name === shop); if (sh && manual && sh.icon !== cur) put('shops', Object.assign({}, sh, { icon: cur })); }
-  resetForm(); render(); toast(editing ? '改好了' : '記好了');
+  const wasEditing = !!editing;
+  resetForm(); render(); toast(wasEditing ? '改好了' : '記好了');
 };
 function editEntry(id) {
   const e = alive(S.entries).find(x => x.id === id); if (!e) return;
+  if (e.periodId) { toast('這筆已經關帳了；要改請先到「清算」撤銷那次關帳'); return; }
   editing = id; go('log');
   $('fDate').value = e.date; $('shop').value = e.shop; paint(ic(e.icon), true); setMeal(e.meal);
   $('payer').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === e.payer));
@@ -1150,6 +1182,7 @@ function editEntry(id) {
 }
 function delEntry(id) {
   const e = alive(S.entries).find(x => x.id === id); if (!e) return;
+  if (e.periodId) { toast('這筆已經關帳了，不能刪'); return; }
   if (!confirm('刪掉「' + e.shop + '」這一筆？')) return;
   put('entries', Object.assign({}, e, { deleted: 1 }));
   if (editing === id) resetForm();
@@ -1223,6 +1256,14 @@ $('btnClose').onclick = () => {
   putMany('entries', list.map(e => Object.assign({}, e, { periodId: pid })));
   toast('關帳完成，新的一期開始');
 };
+
+function undoPeriod(x) {
+  const list = alive(S.entries).filter(e => e.periodId === x.id);
+  if (!confirm('撤銷 ' + md(x.fromDate) + '–' + md(x.toDate) + ' 這次關帳？\n這 ' + list.length + ' 筆會回到本期，可以再修改。')) return;
+  put('periods', Object.assign({}, x, { deleted: 1 }));
+  if (list.length) putMany('entries', list.map(e => Object.assign({}, e, { periodId: '' })));
+  render(); toast('撤銷了，' + list.length + ' 筆回到本期');
+}
 
 /* ================= 統計 ================= */
 let statWho = '';
@@ -1324,7 +1365,9 @@ function entryEl(e) {
   d.appendChild(pxc('f', e.icon || 'bento', 24));
   const t = document.createElement('div'); t.className = 't';
   const split = M().map((m, i) => (+e[AK[i]] ? nt(e[AK[i]]) : '–')).join('/');
-  const tag = (e.meal || 'lunch') !== 'lunch' ? '<span style="color:var(--gold)">［' + mealName(e.meal) + '］</span>' : '';
+  const tag = (e.periodId ? '<span class="lk">已關帳</span>' : '') +
+    ((e.meal || 'lunch') !== 'lunch' ? '<span style="color:var(--gold)">［' + mealName(e.meal) + '］</span>' : '');
+  if (e.periodId) d.classList.add('locked');
   t.innerHTML = '<div class="s1">' + md(e.date) + '　' + esc(e.shop) + '</div>' +
     '<div class="s2">' + tag + esc(mName(e.payer)) + ' 先付・' + split + '</div>';
   const a = document.createElement('div'); a.className = 'a';
@@ -1482,6 +1525,10 @@ function render() {
     const t = document.createElement('div'); t.className = 't';
     t.innerHTML = '<div class="s1">' + md(x.fromDate) + '–' + md(x.toDate) + '　' + (info.c || 0) + ' 筆</div><div class="s2">' + esc(txt) + '</div>';
     const a = document.createElement('div'); a.className = 'a'; a.innerHTML = '<b>' + nt(info.sum || 0) + '</b>';
+    if (x === pd[0]) {                       // 只有最近一次關帳可以撤銷
+      const u = document.createElement('button'); u.className = 'btn sm undo'; u.textContent = '撤銷';
+      u.onclick = () => undoPeriod(x); a.appendChild(u);
+    }
     d.append(t, a); pb.appendChild(d);
   });
 
@@ -1566,7 +1613,12 @@ window.addEventListener('online', () => sync(true));
 </script>
 <script>
     (() => { const st = $('stage'), pl = $('plate'); st.appendChild(pl);
-      Object.assign(pl.style, { position: 'absolute', left: '10px', top: '10px', right: 'auto', bottom: 'auto', transform: 'none', margin: '0', zIndex: 6 }); })();
+      Object.assign(pl.style, { position: 'absolute', left: '10px', top: 'auto', right: 'auto', bottom: '10px', transform: 'none', margin: '0', zIndex: 6 }); })();
     </script>
-    </body>
+    <script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+}
+</script>
+</body>
 </html>

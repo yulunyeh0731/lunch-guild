@@ -1,5 +1,5 @@
 src/index-test.html
-src/test-stage.png
-src/bg34_x3.png
+src/*.png
+!src/bg34.png
 __pycache__/
 *.pyc

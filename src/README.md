@@ -12,8 +12,10 @@
 | `bg34.py` | 戰鬥背景「午休商店街」192×230，輸出 `bg34.png` |
 | `bg34.png` | 背景成品（`battle34.py` 會讀它） |
 | `battle34.py` | 整合邏輯：把角色、背景、站位、攻擊動畫、魔法陣、影子寫進 html |
+| `app34.py` | app 本身的修正（v1.5 起）：在戰鬥整合之後套用 |
 | `build_index.py` | 產生 `index.html`（輸入固定是根目錄的 `index-v1.3-backview.html`），同時產生本機測試版 `src/index-test.html` |
-| `testindex.py` | 用假資料跑一次：抽店 → 攻擊 → 跳記帳頁，並檢查經典模式 |
+| `testindex.py` | 用假資料跑一次：抽店 → 攻擊，並檢查經典模式（v1.4 的測試） |
+| `test15.py` | v1.5 的 15 項測試：戰鬥結束畫面、跳過動畫、經典模式、改好了、關帳鎖定與撤銷 |
 | `chars.py` | 舊的背面版角色（v1.3），只留作參考 |
 
 ## 改完要做的事
@@ -21,10 +23,10 @@
 ```bash
 python3 src/bg34.py          # 只有改了背景才需要
 python3 src/build_index.py   # 重新產生 index.html
-python3 src/testindex.py     # 確認流程沒壞（會輸出 src/test-stage.png）
+python3 src/test15.py        # 確認流程沒壞（15 項都要 PASS）
 ```
 
-`src/index-test.html`、`src/test-stage.png` 是本機測試用，不進 repo。
+`src/index-test.html` 和測試輸出的 png 是本機測試用，不進 repo。
 
 ## 畫法規則
 

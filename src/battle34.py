@@ -105,7 +105,7 @@ def integrate(src, PREVIEW=False):
     patch("    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0 });",
           "    const SLOT = { eric: [150, 134, 2], yulun: [20, 160, 2], karen: [188, 262, 3] }[k] || [0, 0, 1];\n"
           "    d.style.left = SLOT[0] + 'px'; d.style.top = SLOT[1] + 'px'; d.style.zIndex = SLOT[2];\n"
-          "    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0 });")
+          "    d.append(cv, sh); box.appendChild(d);\n    units.push({ k, d, cv, frame: 0, z0: SLOT[2] });")
 
     # ---- 人物影子：放在腳底下（框底往下露 7px）、加寬加深 ----
     patch(r'#bparty \.u \.sh\{position:absolute;left:50%;bottom:4px;transform:translateX\(-50%\);\s*width:46px;height:18px;opacity:\.45;z-index:1\}',
@@ -117,11 +117,23 @@ def integrate(src, PREVIEW=False):
     i = h.index('function attackOne(u, done) {')
     j = h.index('/* ---- 抽籤 ---- */')
     JS = '''const ARROW_FX = %.4f, ARROW_FY = %.4f;
-    function bump() { const st = $('stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }
+    // 攻擊動畫的計時器都經過 bt()，點畫面時 skipBattle() 可以一次清掉、直接跳到結果
+let BT = [];
+function bt(fn, ms) { const id = setTimeout(() => { BT = BT.filter(x => x !== id); fn(); }, ms); BT.push(id); return id; }
+function skipBattle() {
+  if (!BT.length) return;
+  BT.forEach(clearTimeout); BT = [];
+  document.querySelectorAll('#fx .fx, #stage .fx').forEach(x => x.remove());
+  units.forEach(u => { u.d.style.transition = ''; u.d.style.transform = ''; u.d.style.zIndex = u.z0; draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); });
+  $('plate').style.transition = ''; $('plate').style.opacity = ''; idleOn = true;
+  battleEnd();
+}
+$('stage').addEventListener('click', () => { if (rolling && BT.length) skipBattle(); });
+function bump() { const st = $('stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }
     function attackOne(u, done) {
       idleOn = false;
       const f = $('foeIcon').getBoundingClientRect(), s = u.cv.getBoundingClientRect();
-      const fin = (ms) => setTimeout(() => { draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); idleOn = true; if (done) done(); }, ms);
+      const fin = (ms) => bt(() => { draw(u.cv, SPR[u.k + '_1'], SPAL[u.k]); idleOn = true; if (done) done(); }, ms);
       if (u.k === 'eric') {
         // 衝刺 → 舉劍 → 揮下（劍尖剛好砍到敵人）→ 跳回
         const dx = (f.left + f.width * 0.38) - (s.left + s.width * 0.95);
@@ -130,19 +142,19 @@ def integrate(src, PREVIEW=False):
         u.d.style.zIndex = 9;
         u.d.style.transition = 'transform .24s steps(5)';
         u.d.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
-        setTimeout(() => draw(u.cv, SPR.eric_atk, SPAL.eric), 120);
-        setTimeout(() => {
+        bt(() => draw(u.cv, SPR.eric_atk, SPAL.eric), 120);
+        bt(() => {
           draw(u.cv, SPR.eric_hit, SPAL.eric);
           fxDraw('cleave', 150, 150, f.left + f.width / 2 - 75, f.top + f.height / 2 - 75);
           hitFoe(); bump();
         }, 380);
-        setTimeout(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); $('plate').style.opacity = ''; }, 820);
-        setTimeout(() => { u.d.style.transition = ''; u.d.style.zIndex = 2; }, 1100);
+        bt(() => { u.d.style.transition = 'transform .26s steps(5)'; u.d.style.transform = ''; draw(u.cv, SPR.eric_1, SPAL.eric); $('plate').style.opacity = ''; }, 820);
+        bt(() => { u.d.style.transition = ''; u.d.style.zIndex = u.z0; }, 1100);
         fin(1120);
       } else if (u.k === 'yulun') {
         // 拉弓（轉正）→ 放箭：箭走淺拋物線，避開 Eric 頭頂
         draw(u.cv, SPR.yulun_draw, SPAL.yulun);
-        setTimeout(() => {
+        bt(() => {
           draw(u.cv, SPR.yulun_rel, SPAL.yulun);
           const x0 = s.left + s.width * ARROW_FX, y0 = s.top + s.height * ARROW_FY;
           const x1 = f.left + f.width * 0.45, y1 = f.top + f.height * 0.55;
@@ -151,7 +163,7 @@ def integrate(src, PREVIEW=False):
           const cv = document.createElement('canvas'); draw(cv, FX.arrow, FXPAL.arrow);
           cv.style.width = '24px'; cv.style.height = '66px'; d.appendChild(cv); $('fx').appendChild(d);
           const N = 8;
-          for (let k = 0; k <= N; k++) setTimeout(() => {
+          for (let k = 0; k <= N; k++) bt(() => {
             const t = k / N, x = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, y = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1;
             const tx = 2 * (1 - t) * (cx - x0) + 2 * t * (x1 - cx), ty = 2 * (1 - t) * (cy - y0) + 2 * t * (y1 - cy);
             d.style.left = (x - 12) + 'px'; d.style.top = (y - 33) + 'px';
@@ -163,7 +175,7 @@ def integrate(src, PREVIEW=False):
       } else {
         // 舉杖蓄力（寶珠亮）→ 施法：敵人腳下出現魔法陣 → 爆開
         draw(u.cv, SPR.karen_raise, SPAL.karen);
-        setTimeout(() => {
+        bt(() => {
           draw(u.cv, SPR.karen_cast, SPAL.karen);
           // 魔法陣是地上的圖案：畫在舞台地面層（人物和敵人下面）
           const sh = $('foeShadow').getBoundingClientRect(), st = $('stage'), sr = st.getBoundingClientRect();
@@ -173,9 +185,9 @@ def integrate(src, PREVIEW=False):
           d.style.left = (sh.left + sh.width / 2 - 88 - sr.left - st.clientLeft) + 'px';
           d.style.top = (sh.top + sh.height / 2 - 38 - sr.top - st.clientTop) + 'px';
           d.style.zIndex = 2; st.appendChild(d); void d.offsetWidth; d.classList.add('go');
-          setTimeout(() => d.remove(), 1000);
+          bt(() => d.remove(), 1000);
         }, 420);
-        setTimeout(() => {
+        bt(() => {
           fxDraw('magic', 122, 128, f.left + f.width / 2 - 61, f.top + f.height / 2 - 64);
           hitFoe(); bump();
         }, 980);
@@ -189,16 +201,17 @@ def integrate(src, PREVIEW=False):
     # 依序攻擊：Eric → Yulun → Karen，一個做完再換下一個
     i = h.index("  units.forEach((u, i) => setTimeout(() => attackOne(u, i === units.length - 1 ? () => {")
     j = h.index("function applyEncStyle()")
-    END_PREVIEW = "type($('talk'), '決定吃「' + foeShop.name + '」！\\u3000（預覽：再按一次「就這家」可重播）', () => { rolling = false; });"
-    END_INDEX = "type($('talk'), '決定吃「' + foeShop.name + '」！\\u3000隊伍朝店家前進。', () => { rolling = false; setTimeout(() => go('log'), 500); });"
+    END_PREVIEW = "rolling = false; type($('talk'), '決定吃「' + foeShop.name + '」！\\u3000（預覽：再按一次「就這家」可重播）');"
+    END_INDEX = "rolling = false; decide();"      # 打完停在遭遇畫面，由玩家決定要不要馬上記帳
     h = h[:i] + """  const order = ['eric', 'yulun', 'karen'].map(k => units.find(u => u.k === k)).filter(Boolean);
       units.forEach(u => { if (!order.includes(u)) order.push(u); });
       const next = (n) => {
-        if (n >= order.length) { %s return; }
-        attackOne(order[n], () => setTimeout(() => next(n + 1), 260));
+        if (n >= order.length) { battleEnd(); return; }
+        attackOne(order[n], () => bt(() => next(n + 1), 260));
       };
-      setTimeout(() => next(0), 200);
+      bt(() => next(0), 200);
     };
+    function battleEnd() { %s }
     """ % (END_PREVIEW if PREVIEW else END_INDEX) + h[j:]
 
     # 魔法陣 FX + 動畫
@@ -209,10 +222,10 @@ def integrate(src, PREVIEW=False):
     patch('.fx.magic.go{', '.fx.mcircle.go{animation:bmc .95s steps(6) 1 forwards}\n'
           '@keyframes bmc{0%{opacity:0;transform:scale(.25)}25%{opacity:1;transform:scale(1)}50%{opacity:.75}70%{opacity:1}100%{opacity:0;transform:scale(1.08)}}\n.fx.magic.go{')
 
-    # 店名牌移到左上角（不擋隊伍）
+    # 店名牌放左下角草地上（不擋上面的店家，也不擋隊伍）
     h = h.replace('</body>', '''<script>
     (() => { const st = $('stage'), pl = $('plate'); st.appendChild(pl);
-      Object.assign(pl.style, { position: 'absolute', left: '10px', top: '10px', right: 'auto', bottom: 'auto', transform: 'none', margin: '0', zIndex: 6 }); })();
+      Object.assign(pl.style, { position: 'absolute', left: '10px', top: 'auto', right: 'auto', bottom: '10px', transform: 'none', margin: '0', zIndex: 6 }); })();
     </script>
     </body>''', 1)
 
