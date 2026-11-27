@@ -8,6 +8,16 @@
 
 ---
 
+## v2.0.2 — 2026-11-27　標題列小圖示、桌面名稱
+
+- 標題列左上的小拉麵（原本 `#crest` canvas 畫舊的 `RAMEN` 圖）換成新圖示的碗：`icon34.icon_A3(bg=False)` → `src/icon-crest.png`（54×50，透明背景），
+  `appicon.py` 把 canvas 換成 `<img>`，寬 36px（iPhone 3 倍螢幕剛好 2 倍放大，像素整齊），並拿掉 `draw($('crest'), RAMEN, RPAL)` 那行。
+- 桌面名稱改成「午餐選困互助會」：`apple-mobile-web-app-title` 和 manifest `short_name` 原本是「午餐互助會」。
+  （iPhone 桌面名稱太長時系統會自動截成「…」，這不是網頁能控制的。）
+sw.js 快取名改 `lunch-guild-v2.0.2`。
+
+---
+
 ## v2.0.1 — 2026-11-27　新 App 圖示
 
 使用者覺得舊圖示畫得不好。給了三個方向（A 精修拉麵／B 公會徽章／C 寶箱），選 A；再要求：碗右下陰影太深像缺角、要亮和滿版、叉燒多一點、海苔大一點；

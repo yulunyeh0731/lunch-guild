@@ -226,7 +226,7 @@ def icon_A2():
 
 
 
-def icon_A3(k=.9, cx=30, cy=33, frame=True):
+def icon_A3(k=.9, cx=30, cy=33, frame=True, bg=True):
     T = lambda x, y: (cx + (x - cx) * k, cy + (y - cy) * k)
     TB = lambda x0, y0, x1, y1: (*T(x0, y0), *T(x1, y1))
     sp = C.Sprite()
@@ -307,8 +307,11 @@ def icon_A3(k=.9, cx=30, cy=33, frame=True):
                 sp.rgb[y, x] = (244, 248, 255, 255 if y > 9 else 160)
                 if sp.rgb[y, x + 1, 3] == 0 and y > 9:
                     sp.rgb[y, x + 1] = (200, 214, 245, 150)
-    bg = background(glow=(30, 26), warm=(240, 184, 100), inner='#22306a', outer='#0e1538', thick=True) if frame else background2()
-    return comp(bg, sp)
+    if not bg:                       # 標題列小圖示：只要碗，不要背景
+        im = Image.fromarray(sp.rgb, 'RGBA')
+        return im.crop(im.getbbox())
+    back = background(glow=(30, 26), warm=(240, 184, 100), inner='#22306a', outer='#0e1538', thick=True) if frame else background2()
+    return comp(back, sp)
 
 
 # ---------------- B 公會徽章 ----------------
@@ -423,4 +426,5 @@ def save(im, name):
 if __name__ == '__main__':
     for k, f in (('A', icon_A), ('A2', icon_A2), ('A3', icon_A3), ('B', icon_B), ('C', icon_C)):
         save(f(), 'icon_' + k)
+    icon_A3(bg=False).save('icon-crest.png')
     print('ok')

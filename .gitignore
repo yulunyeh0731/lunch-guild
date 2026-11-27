@@ -3,5 +3,6 @@ src/*.png
 !src/bg34.png
 !src/bgtown_street.png
 !src/icon-180.png
+!src/icon-crest.png
 __pycache__/
 *.pyc
