@@ -4,7 +4,7 @@
 import os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import battle34, app34, pocket34, fix20, appicon, join20, layout203, uiapply, food22, ui22, ui221, fx222
+import battle34, app34, pocket34, fix20, appicon, join20, layout203, uiapply, food22, ui22, ui221, fx222, idle22
 REPO = os.path.dirname(HERE) + os.sep
 BASE = REPO + 'index-v1.3-backview.html'
 if not os.path.exists(BASE):
@@ -23,6 +23,7 @@ h = food22.apply(h)                    # v2.2 食物圖示 32×32 重畫、熱�
 h = ui22.apply(h)                      # v2.2.1 標題小圖示補畫、月曆爆版修正
 h = ui221.apply(h)                     # v2.2.2 付款箭頭、長條圖、齒輪、月曆箭頭
 h = fx222.apply(h, 'mosaic')           # v2.2.4 進戰鬥轉場：馬賽克
+h = idle22.apply(h)                    # v2.2.5 待機動畫：膝蓋下沉呼吸＋小動作
 open(REPO + 'index.html', 'w', encoding='utf-8').write(h)
 
 # 本機測試版（假資料、獨立儲存，不進 repo）：python3 src/testindex.py 會用它跑一次完整流程
