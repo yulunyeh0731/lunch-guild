@@ -7,8 +7,10 @@ import numpy as np
 import math
 
 W, H = 64, 80
-SELOUT = False
-HAIRCLUMP = False
+SELOUT = True        # 選擇性外框（v1.9 起預設）
+HAIRCLUMP = True     # 頭髮髮束
+SHIELD2 = True       # Eric 的盾在背後、只露出左邊一截（立體推算後的正確位置）
+DETAIL2 = True       # 衣服皺摺、材質
 OUTLINE = (20, 13, 26)
 
 
@@ -192,12 +194,15 @@ class Sprite:
                         if not sel:
                             res[y, x] = (*OUTLINE, 255)
                         else:
-                            nb = self.rgb[yy, xx, :3].astype(np.float32)
-                            if dy == -1:   k = .78        # 這個外框點在物體下面：最深
-                            elif dx == 1 or dy == 1: k = .55   # 在物體左邊或上面（受光側）：淡一點
-                            else:          k = .68
-                            c = dk * k + nb * .32 * (1 - k) * 2.2
-                            res[y, x] = (*np.clip(c, 0, 255).astype(np.uint8), 255)
+                            # 顏色取鄰居零件材質的最深色調，跟外框色固定比例混：下緣最深（純外框色），其他兩階
+                            pi = self.pid[yy, xx]
+                            if pi < 0 or dy == -1:
+                                res[y, x] = (*OUTLINE, 255)
+                            else:
+                                base = np.array(hx(R[self.parts_sorted[pi]['mat']][0]), np.float32)
+                                k = .45 if (dx == 1 or dy == 1) else .62     # 受光側（物體左邊、上面）淡一點
+                                c = dk * k + base * (1 - k)
+                                res[y, x] = (*np.clip(c, 0, 255).astype(np.uint8), 255)
                         break
         self.rgb = res
         return self
@@ -233,6 +238,15 @@ def P(pts):
     return [(x, y + OY) for (x, y) in pts]
 def B(x0, y0, x1, y1):
     return (x0, y0 + OY, x1, y1 + OY)
+
+
+def fold(sp, name, pts, color, step=1):
+    """在某個零件上畫一條線（只畫在該零件看得到的像素上）：皺摺、剪接線、明線用"""
+    m = M(sp, name)
+    im = Image.new('L', (W, H), 0); ImageDraw.Draw(im).line(P(pts), fill=255)
+    for i, (yy, xx) in enumerate(zip(*np.nonzero(np.array(im) > 127))):
+        if m[yy, xx] and sp.parts_sorted[sp.pid[yy, xx]]['name'] == name and i % step == 0:
+            sp.px(xx, yy, color)
 
 
 def hair_clumps(sp, name, mat, crown, R_=9, a0=-40, a1=210, n=8, curly=False, seed=0):
@@ -407,15 +421,15 @@ ERIC_POSE = {
     'idle': dict(up=(0, 0), lean=0, hip=(0, 0),
                  L=[(23, 44), (21, 53), (18, 61)], R=[(30, 44), (33, 53), (35, 62)],
                  bootL=(15, 67, 8, 0), bootR=(32, 68, 8, 0),
-                 arm=[(35, 28), (39, 34), (41, 40)], sw=((0.45, -0.89), 19), shield=(0, 0)),
+                 arm=[(35, 28), (39, 34), (41, 40)], sw=((0.45, -0.89), 22), shield=(0, 0)),
     'atk':  dict(up=(-2, 0), lean=-1, hip=(-1, 0),
                  L=[(22, 44), (21, 53), (16, 61)], R=[(29, 44), (33, 53), (37, 62)],
                  bootL=(13, 67, 8, 0), bootR=(34, 68, 8, 0),
-                 arm=[(35, 28), (40, 21), (37, 13)], sw=((-0.5, -0.87), 19), shield=(1, 0)),
+                 arm=[(35, 28), (40, 21), (37, 13)], sw=((-0.5, -0.87), 20), shield=(1, 0)),
     'hit':  dict(up=(1, 2), lean=1, hip=(1, 1),
                  L=[(24, 45), (19, 53), (14, 60)], R=[(31, 45), (38, 51), (39, 62)],
                  bootL=(10, 66, 8, 2), bootR=(36, 68, 8, 0),
-                 arm=[(35, 28), (41, 32), (45, 36)], sw=((0.78, 0.62), 17), shield=(-1, 0)),
+                 arm=[(35, 28), (41, 32), (45, 36)], sw=((0.78, 0.62), 18), shield=(-1, 0)),
 }
 
 
@@ -465,12 +479,20 @@ def eric34(pose='idle'):
     boot(sp, 'bootL', gL, 6.5, light=-.25)
     boot(sp, 'bootR', gR, 8.5)
 
-    # ---- 盾（遠側左手，看到盾內側 + 抓握把的左手）----
+    # ---- 盾 ----
     sdx, sdy = c['shield']
-    sh_pts = [(4, 25), (17, 25), (18, 30), (17, 38), (10, 48), (5, 38), (3, 30)]
-    sp.poly('shield', 'shieldw', 5, P(U(sh_pts, sdx)))
-    sp.cap('armL', 'green', 5.4, P(U([(18, 31), (10, 32)], sdx)), 1.8, light=.1)
-    sp.ell('fistL', 'skin', 5.6, B(*[v + (sdx + ux + ln if i % 2 == 0 else uy) for i, v in enumerate((7, 30, 10, 34))]), light=-.3)
+    if SHIELD2:
+        # 立體推算：Eric 面向右上，看到的是背和右側；盾綁在左前臂往前舉，位置在身體正後方偏左、比背更遠
+        # → 盾大部分被背擋住，只從身體左邊緣露出一截（看到內側）；握把的手在盾後面，看不到。
+        # 看得到的手臂只有左上臂從肩膀往下、伸進盾後面那一小段。
+        sh_pts = [(9, 24), (22, 24), (23, 30), (22, 38), (15.5, 48), (10, 38), (8, 30)]
+        sp.poly('shield', 'shieldw', 5, P(U(sh_pts, sdx)), light=-.08)
+        sp.cap('armLU', 'green', 9.6, P(U([(19.5, 26.5), (17, 34)], 0)), 2.1, light=-.15)
+    else:
+        sh_pts = [(4, 25), (17, 25), (18, 30), (17, 38), (10, 48), (5, 38), (3, 30)]
+        sp.poly('shield', 'shieldw', 5, P(U(sh_pts, sdx)))
+        sp.cap('armL', 'green', 5.4, P(U([(18, 31), (10, 32)], sdx)), 1.8, light=.1)
+        sp.ell('fistL', 'skin', 5.6, B(*[v + (sdx + ux + ln if i % 2 == 0 else uy) for i, v in enumerate((7, 30, 10, 34))]), light=-.3)
 
     sp.ell('pauldron', 'metal', 22, B(*UB(31, 23, 40, 31)))
 
@@ -492,19 +514,30 @@ def eric34(pose='idle'):
         for x in range(W):
             if sm[y, x] and sp.parts_sorted[sp.pid[y, x]]['name'] == 'shield':
                 edge = any(not sm[min(y + dy, H - 1), min(x + dx, W - 1)] for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)))
+                rimx = 15 if SHIELD2 else 10
                 if edge:
-                    sp.px(x, y, R['metal'][2] if x < 10 + ux + sdx else R['metal'][1])
-                elif (x - ux - sdx) in (8, 14) and y > 36 + OY + uy:
+                    sp.px(x, y, R['metal'][2] if x < rimx + ux + sdx else R['metal'][1])
+                elif (x - ux - sdx) in ((12, 17) if SHIELD2 else (8, 14)) and y > (28 if SHIELD2 else 36) + OY + uy:
                     sp.px(x, y, R['shieldw'][0])     # 內側木板縫
-    am = M(sp, 'armL')
-    for sx in (14,):
+    if SHIELD2:
+        # 內側的皮帶（從盾緣橫過去、沒入背後）+ 鉚釘
+        for X in range(int(9 + ux + ln + sdx), int(19 + ux + ln + sdx)):
+            for Y in (31 + OY + uy, 32 + OY + uy):
+                if 0 <= X < W and sm[Y, X] and sp.parts_sorted[sp.pid[Y, X]]['name'] == 'shield':
+                    sp.px(X, Y, R['boot'][0] if Y == 32 + OY + uy else R['boot'][1])
+        for (X, Y) in ((11, 31), (11, 39)):
+            X2, Y2 = int(X + ux + ln + sdx), Y + OY + uy
+            if sm[Y2, X2] and sp.parts_sorted[sp.pid[Y2, X2]]['name'] == 'shield': sp.px(X2, Y2, R['metal'][3])
+    am = M(sp, 'armL') if not SHIELD2 else np.zeros((H, W), bool)
+    for sx in (() if SHIELD2 else (14,)):
         X = sx + ux + ln + sdx
         for y in range(H):
             if sm[y, X] and (am[y, X] or abs(y - (31 + OY + uy)) <= 3):
                 sp.px(X, y, R['leather'][1]); sp.px(X + 1, y, R['leather'][2])
-    fx0 = 7 + ux + ln + sdx
-    for yy_ in (31, 33):
-        sp.px(fx0 + 1, yy_ + OY + uy, R['skin'][0])   # 指節縫
+    if not SHIELD2:
+        fx0 = 7 + ux + ln + sdx
+        for yy_ in (31, 33):
+            sp.px(fx0 + 1, yy_ + OY + uy, R['skin'][0])   # 指節縫
     o = ux + ln
     for x in range(29, 34):
         sp.px(x + o, 15 + OY + uy, '#7a4f1c')
@@ -539,6 +572,19 @@ def eric34(pose='idle'):
     for xx in range(xs.min(), xs.max() + 1):
         sp.px(xx, ys.min() + 2, R['leather'][0])
     sp.px((xs.min() + xs.max()) // 2, ys.min() + 3, R['gold'][3])
+    if DETAIL2:
+        g = R['green']
+        for (x0, x1) in ((23, 22), (29, 30)):                         # 上衣下襬的垂墜褶（暗線 + 旁邊亮線）
+            fold(sp, 'torso', U([(x0, 33), (x1, 38.5)]), g[0]); fold(sp, 'torso', U([(x0 - 1, 33), (x1 - 1, 38.5)]), g[3])
+        fold(sp, 'torso', U([(26, 27), (26, 38)]), g[1], step=2)       # 背中縫
+        fold(sp, 'torso', U([(21, 27), (25, 29)]), g[3])               # 肩胛骨受光
+        fold(sp, 'pauldron', UB(31, 27, 40, 27)[:2] and [(31 + ux + ln, 27 + uy), (40 + ux + ln, 27 + uy)], R['metal'][0])   # 肩甲金屬帶
+        for (x, y) in ((33, 26), (37, 26)):
+            sp.px(x + ux + ln, y + 1 + OY + uy, R['gold'][3])
+        sp.px(33 + ux + ln, 24 + OY + uy, R['metal'][3]); sp.px(34 + ux + ln, 24 + OY + uy, R['metal'][3])   # 金屬高光
+        for nm in ('tassetL', 'tassetR'):                               # 下擺褶
+            ys, xs = np.nonzero(M(sp, nm))
+            if len(xs): fold(sp, nm, [((xs.min() + xs.max()) / 2, ys.min() - OY + 1), ((xs.min() + xs.max()) / 2 + 1, ys.max() - OY - 1)], g[1])
     if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairE', (23 + o, 10 + uy), R_=8, curly=True, seed=3)
     return sp.outline().ground()
 
@@ -571,8 +617,8 @@ YULUN_POSE = {
                  armL=[(19, 25), (10, 20), (27, 18)], handL=(27, 18)),
     'rel':  dict(L=[(22, 44), (21, 53), (18, 61)], R=[(31, 44), (34, 53), (36, 60)], bootL=(0, 68, 6, 0), bootR=(0, 66, 8, 0),
                  torso=[(18, 25), (33, 24), (36, 27), (35, 34), (33, 41), (21, 41), (18, 34), (16, 28)],
-                 armR=[(34, 25), (41.5, 21), (49, 17)], bow=((47, -3), (49.5, 17), (46, 37)),
-                 armL=[(19, 25), (10, 22), (15, 17)], handL=(15, 17)),
+                 armR=[(34, 25), (41.5, 21), (49, 17)], bow=((46, -2), (49.5, 17), (44, 36)),   # 放開的弓保留弧度、往前微傾
+                 armL=[(19, 25), (9, 23), (12, 18)], handL=(12, 18)),                          # 拉弦手沿下巴往後滑到頭的左後方
 }
 
 
@@ -618,7 +664,8 @@ def yulun34(pose='idle'):
     sp.cap('qrim', 'leather', 9.35, P([(QT[0] + qpx * (QW + .8), QT[1] + qpy * (QW + .8)),
                                        (QT[0] - qpx * (QW + .8), QT[1] - qpy * (QW + .8))]), 0.9, 'flat', light=.3)
     # 吊帶：從腰帶左端繞過箭筒上段（有金屬扣）
-    sp.poly('qstrap', 'leather', 9.4, P([(21, 39), (21, 42), (16, 43), (11, 42), (11, 40), (16, 40)]), 'cylv', light=-.05)
+    # 掛法：箭袋上段一圈皮環（只包在箭袋上），腰帶左端接一小段斜吊帶，中間金屬環扣住
+    sp.cap('qstrap', 'leather', 9.45, P([(20.5, 40.4), (15.8, 42.2)]), .9, 'flat', light=-.05)
     arrows = []
     for k, (off, ln_, fan) in enumerate(((-1.6, 8, -.5), (0, 11, 0), (1.6, 7, .5))):   # 三支箭：從筒口微微散開、高低錯開
         a0 = (QT[0] + qpx * off, QT[1] + qpy * off)
@@ -663,11 +710,12 @@ def yulun34(pose='idle'):
     sp.line(P([(QB[0] + qx * 4, QB[1] + qy * 4 - 1), (QT[0] - qx * 3, QT[1] - qy * 3 - 1)]), R['leather'][3], qm)
     for t_ in (4, 9):
         sp.px(int(round(QB[0] + qx * t_)), int(round(QB[1] + qy * t_ + OY)), R['gold'][3])
-    sm_ = M(sp, 'qstrap')
-    sp.px(17, 41 + OY, R['metal'][3]); sp.px(17, 42 + OY, R['metal'][1])
-    ys, xs = np.nonzero(sm_)
-    for xx in set(xs.tolist()):
-        sp.px(xx, ys[xs == xx].min(), R['leather'][3])
+    qm2 = M(sp, 'quiver')
+    for X in range(W):                                   # 箭袋上的皮環（只畫在箭袋可見的像素上）
+        for Y, col in ((42 + OY, R['boot'][1]), (43 + OY, R['boot'][0])):
+            if qm2[Y, X] and sp.parts_sorted[sp.pid[Y, X]]['name'] == 'quiver':
+                sp.px(X, Y, col)
+    sp.px(15, 42 + OY, R['metal'][3]); sp.px(16, 42 + OY, R['metal'][2]); sp.px(15, 43 + OY, R['metal'][1])   # 金屬環
     # 頭髮髮流 + 眼鏡腳
     hm = M(sp, 'hair')
     # 髮旋放射的髮流（暗）
@@ -730,6 +778,22 @@ def yulun34(pose='idle'):
         pants_detail34(sp, 'leg' + nm[-1], hh, kk, aa, M(sp, nm + 'Cuff'), mat='sand')
         boot_detail34(sp, nm, gg)
 
+    if DETAIL2:
+        b = R['blue']
+        fold(sp, 'torso', [(19, 29), (34, 28)], b[0])                    # 丹寧背部剪接線
+        fold(sp, 'torso', [(19, 30), (34, 29)], R['gold'][1], step=2)    # 明線
+        fold(sp, 'torso', [(22, 35), (24, 38)], b[1]); fold(sp, 'torso', [(31, 34), (30, 38)], b[1])   # 背部拉扯褶
+        fold(sp, 'torso', [(21, 31), (23, 33)], b[3])
+        for nm in [n for n in ('armRU', 'armRF', 'armLU') if n in [p['name'] for p in sp.parts_sorted]]:   # 手肘皺摺
+            m_ = M(sp, nm); ys, xs = np.nonzero(m_)
+            if len(xs):
+                cxm, cym = xs.mean(), ys.mean() - OY
+                fold(sp, nm, [(cxm - 1, cym - 1), (cxm + 1, cym)], b[0])
+        for nm, sgn in (('legL', 1), ('legR', -1)):                      # 褲子大腿拉扯褶
+            m_ = M(sp, nm); ys, xs = np.nonzero(m_)
+            if len(xs):
+                top = ys.min() - OY
+                fold(sp, nm, [(xs.mean() + 1 * sgn, top + 2), (xs.mean() - 1 * sgn, top + 6)], R['sand'][0])
     if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairY', (23, 8), R_=9, a0=-30, a1=200, n=8, seed=1)
     pid0 = sp.pid.copy(); names = [p['name'] for p in sp.parts_sorted]
     sp.outline()
@@ -764,7 +828,12 @@ def yulun34(pose='idle'):
         for (ox, oy, cc) in ((0, 0, R['metal'][3]), (-1, 0, R['metal'][2]), (-1, -1, R['metal'][1]), (-1, 1, R['metal'][1])):
             sp.px(tx + ox, ty + oy, cc)
     else:
-        sp.line(P([tT, (tT[0] - 1, g[1]), tB]), R['string'][2], free)
+        sp.line(P([(tT[0] - .5, tT[1] + 1), (tB[0] - .5, tB[1] - 1)]), R['string'][2], free)   # 放開後弦是兩端弓梢間的直線
+        hx_, hy_ = c['handL']                                                                  # 張開的手指（不加框）
+        for (dx, dy, k) in ((-3, -1, 2), (-3, 0, 1), (-2, -3, 2), (-1, -3, 1), (0, -3, 2)):
+            X, Y = int(hx_ + dx), int(hy_ + dy + OY)
+            if 0 <= X < W and 0 <= Y < H and sp.rgb[Y, X, 3] == 0:
+                sp.px(X, Y, R['skin'][k])
     return sp.ground()
 
 
@@ -953,6 +1022,16 @@ def karen34(pose='idle'):
                 sp.px(X + ddx, Y, R['gold'][2])
     # 寶珠高光
     sp.px(int(round(ox - 1)), int(round(oy - 1 + OY)), R['orb'][3])
+    if DETAIL2:
+        fold(sp, 'cape', [(22, 25), (21, 31)], R['cream'][1]); fold(sp, 'cape', [(31, 25), (33, 30)], R['cream'][1])   # 披肩褶
+        fold(sp, 'cape', [(23, 25), (22.5, 30)], R['cream'][-1])
+        for nm in [n for n in ('sleeve', 'sleeveL') if n in [p['name'] for p in sp.parts_sorted]]:      # 袖子皺摺
+            m_ = M(sp, nm); ys, xs = np.nonzero(m_)
+            if len(xs):
+                cxm, cym = xs.mean(), ys.mean() - OY
+                fold(sp, nm, [(cxm - 1, cym - 2), (cxm, cym + 1)], R['pink'][0]); fold(sp, nm, [(cxm + 1, cym - 1), (cxm + 2, cym + 2)], R['pink'][0])
+        fold(sp, 'skirt', [(24, 44), (23, 58)], R['pink'][3], step=2)      # 長袍受光條
+        fold(sp, 'torso', [(22, 30), (24, 36)], R['pink'][3])
     if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairK', (25, 14.6), R_=8, a0=185, a1=355, n=6, seed=2)
     sp.outline()
     # 發光：外框之後畫，光點不加框
