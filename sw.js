@@ -1,7 +1,7 @@
 // 午餐選困互助會：離線快取
 // 有網路 → 一律抓最新版（順便更新快取）；沒網路 → 用上次存的版本打開。
 // 只處理同網域的 GET；Apps Script 的同步請求直接放行，不快取。
-const CACHE = 'lunch-guild-v2.1.2';
+const CACHE = 'lunch-guild-v2.2';
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])).then(() => self.skipWaiting()));
 });
