@@ -1,5 +1,5 @@
 """Battle background for diagonal (Suikoden-style) view. 192x230 px, shown at 2x."""
-import os
+import os, math
 import numpy as np
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +48,7 @@ def noise(cell, seed):
 
 
 def put(x, y, c):
+    x, y = int(round(x)), int(round(y))
     if 0 <= x < W and 0 <= y < H:
         img[y, x] = c
 
@@ -144,17 +145,22 @@ for _ in range(26):
         put(x, y, c); put(x, y + 1, GRASS[0])
 # grass lip: highlight on grass edge, shadow on stone just below/right
 gm = grass.copy()
-edge_top = gm & ~np.roll(gm, 1, axis=0)
+def _sh(m, d, ax):                      # 位移但不從另一邊繞回（np.roll 會把底部的草繞到最上面兩列）
+    o = np.roll(m, d, axis=ax)
+    if ax == 0: o[:d] = False
+    else: o[:, :d] = False
+    return o
+edge_top = gm & ~_sh(gm, 1, 0)
 img[edge_top & (yy > GY)] = GRASS[4]
-below = np.roll(gm, 1, axis=0) & ~gm
-below2 = np.roll(gm, 2, axis=0) & ~gm
-right = np.roll(gm, 1, axis=1) & ~gm
+below = _sh(gm, 1, 0) & ~gm
+below2 = _sh(gm, 2, 0) & ~gm
+right = _sh(gm, 1, 1) & ~gm
 mul(below | right, (0.62, 0.64, 0.78))
 mul(below2 & ~below, (0.82, 0.83, 0.9))
 # moss in mortar near grass
 near = np.zeros_like(gm)
 for d in range(1, 6):
-    near |= np.roll(gm, d, axis=0) | np.roll(gm, d, axis=1)
+    near |= _sh(gm, d, 0) | _sh(gm, d, 1)
 mor = (np.abs(img - MORTAR).sum(axis=2) < 4) & near & ~gm
 img[mor & (rng.random((H, W)) < 0.5)] = GRASS[1]
 
@@ -255,7 +261,7 @@ window(47, 30, 8, 9)
 lantern(14, 21); lantern(46, 21)
 base(-4, 62)
 # shop B: cafe (slate roof, wood wall, green awning)
-roof(74, 130, 2, 18, SLATE, seam=5)
+roof(74, 130, 0, 18, SLATE, seam=5)
 rect(74, 20, 130, GY - 4, WOOD[2])
 for wy in range(22, GY - 4, 3):
     hline(74, 130, wy, WOOD[1]); hline(74, 130, wy + 1, WOOD[3])
@@ -290,46 +296,71 @@ for gx0, gx1 in ((62, 74), (130, 136)):
         vline(fx, 30, GY, WOOD[1])
     rect(gx0, GY - 4, gx1, GY, STONE[1])
 
-# tree in front of alley A|B
-tree_cx = 68
-mul(ellmask(tree_cx + 4, GY + 3, 16, 4))
-rect(tree_cx - 2, 30, tree_cx + 2, GY + 1, WOOD[2])
-vline(tree_cx - 2, 30, GY + 1, WOOD[1]); vline(tree_cx + 1, 30, GY + 1, WOOD[3])
-put(tree_cx - 3, GY, WOOD[1]); put(tree_cx + 2, GY, WOOD[1])
-for (cx, cy, rx, ry) in ((68, 18, 14, 11), (59, 26, 8, 7), (78, 25, 9, 7), (68, 8, 9, 7), (63, 14, 7, 6), (74, 13, 7, 6)):
-    m = ellmask(cx, cy, rx, ry)
-    d = ((xx - cx + rx * 0.35) / rx) ** 2 + ((yy - cy + ry * 0.45) / ry) ** 2
-    t = np.where(d < 0.25, 4, np.where(d < 0.6, 3, np.where(d < 0.95, 2, 1)))
-    img[m] = np.stack(LEAF)[t[m]]
-    edge = m & ~np.roll(m, -1, axis=0)
-    img[edge] = LEAF[0]
-for _ in range(70):                               # leaf clumps
-    x, y = int(rng.integers(52, 88)), int(rng.integers(0, 34))
-    if (np.abs(img[y, x] - LEAF[2]).sum() < 3) or (np.abs(img[y, x] - LEAF[3]).sum() < 3):
-        put(x, y, LEAF[4]); put(x + 1, y + 1, LEAF[1])
+# tree in front of alley A|B：葉簇堆成的不規則樹冠（跟一般頁面背景的 tree2 同一套）
+def tree_clumps(cx, base, s_=1.0, seed=0):
+    r = np.random.default_rng(100 + seed)
+    ccx, ccy, RX, RY = cx, base - 44 * s_, 18 * s_, 17 * s_
+    shm = np.zeros((H, W), bool)                 # 影子：幾個橢圓合併成一塊，只壓暗一次
+    for k in range(7):
+        shm |= ellmask(cx + 7 + r.normal(0, 4), base + 2 + r.normal(0, 1), 8, 2.6)
+    mul(shm)
+    tw = 4
+    for yy_ in range(int(base - 32 * s_), base + 1):
+        flare = max(0, (yy_ - (base - 5)) * .6)
+        x0, x1 = int(cx - tw / 2 - flare), int(cx + tw / 2 + flare)
+        rect(x0, yy_, x1 + 1, yy_ + 1, WOOD[2]); put(x0, yy_, WOOD[1]); put(x1, yy_, WOOD[1]); put(x0 + 1, yy_, WOOD[3])
+        if yy_ % 3 == 0: put(cx + int(r.integers(-1, 2)), yy_, WOOD[1])
+    for (bx, by, ex, ey) in ((cx, base - 28, cx - 8, base - 40), (cx, base - 26, cx + 9, base - 38)):
+        for t in np.linspace(0, 1, 14): put(bx + (ex - bx) * t, by + (ey - by) * t, WOOD[1]); put(bx + (ex - bx) * t + 1, by + (ey - by) * t, WOOD[2])
+    clumps = []
+    for _ in range(int(46 * s_ * s_) + 10):
+        a_ = r.uniform(0, 2 * math.pi); d_ = math.sqrt(r.uniform(0, 1))
+        clumps.append((ccy + math.sin(a_) * d_ * RY, ccx + math.cos(a_) * d_ * RX, r.uniform(3.2, 5.2) * s_))
+    clumps.sort()
+    for (y_, x_, rad) in clumps:
+        m = ellmask(x_, y_, rad, rad * .85)
+        dd = ((xx - x_ + rad * .4) / rad) ** 2 + ((yy - y_ + rad * .45) / rad) ** 2
+        t = np.where(dd < .22, 4, np.where(dd < .62, 3, np.where(dd < 1.0, 2, 1)))
+        depth = (y_ - (ccy - RY)) / (2 * RY) + (x_ - (ccx - RX)) / (4 * RX)
+        t = np.clip(t - (1 if depth > .72 else 0) - (1 if depth > .95 else 0), 0, 4)
+        img[m] = np.stack(LEAF)[t[m]]
+        img[m & ~np.roll(m, -1, axis=0) & (t <= 2)] = LEAF[0]
+    for _ in range(int(70 * s_)):
+        a_ = r.uniform(0, 2 * math.pi)
+        put(int(ccx + math.cos(a_) * (RX + r.uniform(0, 3))), int(ccy + math.sin(a_) * (RY + r.uniform(0, 2))), LEAF[2] if math.sin(a_) < 0 else LEAF[1])
+    for _ in range(int(30 * s_)):
+        put(int(ccx + r.uniform(-RX * .8, RX * .8)), int(ccy + r.uniform(-RY * .6, RY * .8)), LEAF[0])
+
+
+tree_clumps(68, GY + 1, 1.0, 7)
 
 # building cast shadow on street
 sh = (yy >= GY) & (yy < GY + 4)
 mul(sh & ~grass, (0.72, 0.73, 0.85))
 
 # ---------------------------------------------------------------- props
-# A-frame menu board in front of cafe
-mul(ellmask(90, GY + 13, 6, 2))
-rect(86, GY + 2, 95, GY + 12, WOOD[2])
-rect(87, GY + 3, 94, GY + 10, DARK[1])
-for ly in (GY + 5, GY + 7):
-    hline(88, 93, ly, CREAM[3])
-put(88, GY + 9, GLOW[2]); put(89, GY + 9, GLOW[2])
-vline(86, GY + 2, GY + 13, WOOD[1]); vline(94, GY + 2, GY + 13, WOOD[1])
-# crates by shop A
-mul(ellmask(10, GY + 15, 12, 3))
-for (bx, by) in ((0, GY + 2), (9, GY + 5)):
-    rect(bx, by, bx + 10, by + 9, WOOD[3])
-    hline(bx, bx + 10, by, WOOD[4]); hline(bx, bx + 10, by + 8, WOOD[1])
-    vline(bx, by, by + 9, WOOD[1]); vline(bx + 9, by, by + 9, WOOD[1])
-    hline(bx + 1, bx + 9, by + 4, WOOD[2])
-    for k in range(1, 8):
-        put(bx + k, by + 1 + k, WOOD[2])
+# A-frame menu board in front of cafe：A 字木架 + 黑板粉筆字
+bx_, by_ = 84, GY + 1
+mul(ellmask(bx_ + 7, by_ + 17, 8, 2))
+rect(bx_, by_, bx_ + 14, by_ + 15, WOOD[2]); vline(bx_, by_, by_ + 15, WOOD[3]); vline(bx_ + 13, by_, by_ + 15, WOOD[1]); hline(bx_, bx_ + 14, by_, WOOD[4])
+rect(bx_ + 2, by_ + 2, bx_ + 12, by_ + 12, DARK[1])
+for (ly, w_) in ((4, 7), (6, 8), (8, 5), (10, 7)):
+    for k in range(w_):
+        if (k * 7 + ly) % 5: put(bx_ + 3 + k, by_ + ly, CREAM[3] if k < w_ - 2 else GLOW[2])
+put(bx_ + 3, by_ + 3, (199, 95, 80))
+rect(bx_ + 1, by_ + 15, bx_ + 3, by_ + 18, WOOD[1]); rect(bx_ + 11, by_ + 15, bx_ + 13, by_ + 18, WOOD[1])
+# crates by shop A：看得到頂面、側面，有板條、斜撐、釘子
+def crate_(x, y, s_=10):
+    mul(ellmask(x + s_ // 2 + 3, y + s_ + 4, s_ * .7, 2))
+    rect(x + 2, y, x + s_ + 2, y + 4, WOOD[4]); hline(x + 2, x + s_ + 2, y, CREAM[2])
+    for k in range(x + 4, x + s_ + 2, 4): vline(k, y, y + 4, WOOD[3])
+    rect(x, y + 4, x + s_, y + s_ + 4, WOOD[3]); hline(x, x + s_, y + 4, WOOD[4]); hline(x, x + s_, y + s_ + 3, WOOD[1])
+    vline(x, y + 4, y + s_ + 4, WOOD[1]); vline(x + s_ - 1, y + 4, y + s_ + 4, WOOD[1])
+    rect(x + s_, y + 1, x + s_ + 2, y + s_ + 4, WOOD[1])
+    hline(x + 1, x + s_ - 1, y + 4 + s_ // 2, WOOD[2])
+    for k in range(1, s_ - 1): put(x + k, y + 4 + k * (s_ - 1) // s_, WOOD[2])
+    for (nx, ny) in ((x + 1, y + 5), (x + s_ - 2, y + 5), (x + 1, y + s_ + 2), (x + s_ - 2, y + s_ + 2)): put(nx, ny, METAL[2])
+crate_(0, GY + 4, 10); crate_(9, GY + 9, 9)
 # street lamp right edge
 lx = 184
 mul(ellmask(lx + 3, GY + 46, 6, 2))
@@ -339,20 +370,25 @@ rect(lx - 3, GY + 42, lx + 4, GY + 46, METAL[1]); hline(lx - 3, lx + 4, GY + 42,
 rect(lx - 3, GY - 2, lx + 4, GY + 8, METAL[0])
 rect(lx - 2, GY - 1, lx + 3, GY + 7, GLOW[2]); vline(lx - 2, GY - 1, GY + 7, GLOW[3])
 hline(lx - 4, lx + 5, GY - 3, METAL[1])
-# planter bottom-right
+# planter bottom-right：木花台 + 葉簇堆成的植物 + 小花
 px0, py0 = 158, H - 22
-mul(ellmask(px0 + 15, py0 + 19, 17, 3))
+mul(ellmask(px0 + 16, py0 + 19, 17, 3))
 rect(px0, py0 + 8, px0 + 30, py0 + 18, WOOD[2])
 hline(px0, px0 + 30, py0 + 8, WOOD[4]); hline(px0, px0 + 30, py0 + 17, WOOD[0])
 for k in range(px0 + 5, px0 + 30, 6):
     vline(k, py0 + 9, py0 + 17, WOOD[1])
-for (cx, cy) in ((px0 + 6, py0 + 5), (px0 + 15, py0 + 3), (px0 + 24, py0 + 5)):
-    m = ellmask(cx, cy, 6, 5)
-    img[m] = LEAF[2]
-    img[m & ellmask(cx - 1, cy - 2, 3, 2)] = LEAF[3]
-    img[m & ~np.roll(m, -1, axis=0)] = LEAF[0]
-for k in range(10):
-    put(px0 + 3 + k * 3, py0 + 2 + (k * 7) % 6, FLOW[k % 4])
+rect(px0 + 1, py0 + 7, px0 + 29, py0 + 8, (74, 52, 36))
+_r = np.random.default_rng(31)
+_cl = sorted([(_r.uniform(0, 1), _r.uniform(-1, 1), _r.uniform(2.4, 3.6)) for _ in range(22)])
+for (dy_, dx_, rad) in _cl:
+    cx_, cy_ = px0 + 15 + dx_ * 13, py0 + 6 - dy_ * 7
+    m = ellmask(cx_, cy_, rad, rad * .85)
+    dd = ((xx - cx_ + rad * .4) / rad) ** 2 + ((yy - cy_ + rad * .45) / rad) ** 2
+    t = np.where(dd < .25, 4, np.where(dd < .65, 3, np.where(dd < 1.0, 2, 1)))
+    if dx_ > .4: t = np.clip(t - 1, 0, 4)
+    img[m] = np.stack(LEAF)[t[m]]
+for k in range(9):
+    put(px0 + 3 + k * 3, py0 + 1 + (k * 7) % 6, FLOW[k % 4]); put(px0 + 4 + k * 3, py0 + 1 + (k * 7) % 6, FLOW[k % 4])
 
 out = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), 'RGB')
 out.save(os.path.join(HERE, 'bg34.png'))

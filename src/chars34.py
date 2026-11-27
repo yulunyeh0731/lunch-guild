@@ -7,6 +7,8 @@ import numpy as np
 import math
 
 W, H = 64, 80
+SELOUT = False
+HAIRCLUMP = False
 OUTLINE = (20, 13, 26)
 
 
@@ -173,17 +175,29 @@ class Sprite:
             if self.rgb[y, x, 3] == 0:
                 self.px(x, y, color)
 
-    def outline(self):
+    def outline(self, sel=None):
+        """外框。sel=True（或全域 SELOUT）時用「選擇性外框」：顏色取旁邊材質的深色調；
+        下緣（物體在上面）維持最深，受光的左上緣淡一點。"""
+        sel = SELOUT if sel is None else sel
         a = self.rgb[:, :, 3] > 0
         res = self.rgb.copy()
+        dk = np.array(OUTLINE, np.float32)
         for y in range(H):
             for x in range(W):
                 if a[y, x]:
                     continue
-                for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                for dy, dx in ((-1, 0), (0, 1), (0, -1), (1, 0)):
                     yy, xx = y + dy, x + dx
                     if 0 <= yy < H and 0 <= xx < W and a[yy, xx]:
-                        res[y, x] = (*OUTLINE, 255)
+                        if not sel:
+                            res[y, x] = (*OUTLINE, 255)
+                        else:
+                            nb = self.rgb[yy, xx, :3].astype(np.float32)
+                            if dy == -1:   k = .78        # 這個外框點在物體下面：最深
+                            elif dx == 1 or dy == 1: k = .55   # 在物體左邊或上面（受光側）：淡一點
+                            else:          k = .68
+                            c = dk * k + nb * .32 * (1 - k) * 2.2
+                            res[y, x] = (*np.clip(c, 0, 255).astype(np.uint8), 255)
                         break
         self.rgb = res
         return self
@@ -219,6 +233,40 @@ def P(pts):
     return [(x, y + OY) for (x, y) in pts]
 def B(x0, y0, x1, y1):
     return (x0, y0 + OY, x1, y1 + OY)
+
+
+def hair_clumps(sp, name, mat, crown, R_=9, a0=-40, a1=210, n=8, curly=False, seed=0):
+    """頭髮髮束：從髮旋往外放射的分界線（越往外越往下彎）+ 每束受光上半部的亮光；捲髮改成小捲 + 亮點"""
+    m = M(sp, name)
+    own = lambda x, y: 0 <= x < W and 0 <= y < H and m[y, x] and sp.parts_sorted[sp.pid[y, x]]['name'] == name
+    cx, cy = crown[0], crown[1] + OY
+    rr = np.random.default_rng(seed)
+    if curly:
+        ys, xs = np.nonzero(m)
+        for _ in range(int(len(xs) / 9)):
+            i = int(rr.integers(0, len(xs))); x, y = int(xs[i]), int(ys[i])
+            if not own(x, y) or not own(x + 1, y + 1) or not own(x - 1, y + 1): continue
+            for (dx, dy) in ((-1, 1), (0, 1), (1, 1), (1, 0)):          # 小捲的暗弧
+                if own(x + dx, y + dy): sp.px(x + dx, y + dy, R[mat][0])
+            if own(x - 1, y) and y < cy + R_ * .9: sp.px(x - 1, y, R[mat][3])   # 捲上的亮點（受光側）
+            elif own(x, y): sp.px(x, y, R[mat][2])
+        return
+    angs = np.linspace(a0, a1, n + 1)
+    for k, a in enumerate(angs):                                         # 分界線
+        th = math.radians(a + rr.uniform(-6, 6))
+        for t in np.linspace(.25, 1.6, 40):
+            r = t * R_
+            x = cx + math.cos(th) * r; y = cy + math.sin(th) * r + (t ** 2) * 1.6
+            X, Y = int(round(x)), int(round(y))
+            if own(X, Y): sp.px(X, Y, R[mat][0])
+    for k in range(n):                                                   # 每束的亮光（只在上半部、受光）
+        th = math.radians((angs[k] + angs[k + 1]) / 2)
+        for t in np.linspace(.3, .95, 14):
+            r = t * R_
+            x = cx + math.cos(th) * r - .6; y = cy + math.sin(th) * r + (t ** 2) * 1.6 - .6
+            X, Y = int(round(x)), int(round(y))
+            if own(X, Y) and Y < cy + R_ * .55 and (math.cos(th) < .6):
+                sp.px(X, Y, R[mat][3] if t < .7 else R[mat][2])
 
 
 def sword(sp, hx_, hy_, dx, dy, L, z=23):
@@ -491,6 +539,7 @@ def eric34(pose='idle'):
     for xx in range(xs.min(), xs.max() + 1):
         sp.px(xx, ys.min() + 2, R['leather'][0])
     sp.px((xs.min() + xs.max()) // 2, ys.min() + 3, R['gold'][3])
+    if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairE', (23 + o, 10 + uy), R_=8, curly=True, seed=3)
     return sp.outline().ground()
 
 
@@ -681,6 +730,7 @@ def yulun34(pose='idle'):
         pants_detail34(sp, 'leg' + nm[-1], hh, kk, aa, M(sp, nm + 'Cuff'), mat='sand')
         boot_detail34(sp, nm, gg)
 
+    if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairY', (23, 8), R_=9, a0=-30, a1=200, n=8, seed=1)
     pid0 = sp.pid.copy(); names = [p['name'] for p in sp.parts_sorted]
     sp.outline()
     okn = ('quiver', 'qrim', 'qstrap', 'shaft0', 'shaft1', 'shaft2')
@@ -903,6 +953,7 @@ def karen34(pose='idle'):
                 sp.px(X + ddx, Y, R['gold'][2])
     # 寶珠高光
     sp.px(int(round(ox - 1)), int(round(oy - 1 + OY)), R['orb'][3])
+    if HAIRCLUMP: hair_clumps(sp, 'hair', 'hairK', (25, 14.6), R_=8, a0=185, a1=355, n=6, seed=2)
     sp.outline()
     # 發光：外框之後畫，光點不加框
     if c['glow']:

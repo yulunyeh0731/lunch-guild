@@ -360,8 +360,10 @@ def tree2(cx, base, s=1.0, seed=0):
     r = np.random.default_rng(100 + seed)
     ccx, ccy, RX, RY = cx, base - 40 * s, 21 * s, 17 * s
     # 地上的影子（偏右下、不規則）
+    shm = np.zeros((H, W), bool)                 # 影子：合併成一塊，只壓暗一次
     for k in range(7):
-        mul(ell(cx + 8 * s + r.normal(0, 4), base + 1 + r.normal(0, 1), 9 * s, 3 * s))
+        shm |= ell(cx + 8 * s + r.normal(0, 4), base + 1 + r.normal(0, 1), 9 * s, 3 * s)
+    mul(shm)
     # 樹幹 + 根
     tw = max(3, int(5 * s))
     for yy_ in range(int(base - 30 * s), base + 1):
