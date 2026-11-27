@@ -296,6 +296,62 @@ nav button[aria-pressed=true] canvas{opacity:1}
 .e.locked{opacity:.72}
 .e .lk{display:inline-block;font-size:11px;line-height:1;padding:2px 4px;margin-right:4px;border:1px solid var(--dim,#8a8fa8);color:var(--dim,#8a8fa8);vertical-align:1px}
 .e .a .undo{display:block;margin:6px 0 0 auto;width:auto;padding:4px 10px;font-size:11px}
+
+/* ---- v2.0 口袋名單 ---- */
+.pkhint{font-size:11px;color:var(--dim);line-height:1.7;margin:2px 0 0}
+.mask.full{padding:0;align-items:stretch}
+.mask.full .win{max-width:520px;height:100%;max-height:none;display:flex;flex-direction:column;padding-left:12px;padding-right:12px;
+  padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:calc(env(safe-area-inset-bottom) + 12px)}
+.pkx{font-size:11px;color:var(--gold);padding:4px 10px;border:var(--px) solid var(--gold2);margin-left:6px;letter-spacing:1px;flex:none}
+.pkx[aria-pressed=true]{background:var(--gold2);color:#1a1508}
+.pktool{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;flex:none}
+.pktool .inp{font-size:16px}
+.seg.row{display:flex;gap:6px}
+.seg button small{font-size:11px;color:var(--dim);margin-left:3px}
+.seg button[aria-pressed=true] small{color:var(--gold)}
+.seg.sm button{font-size:11px;padding:6px 2px;letter-spacing:1px}
+.pksort{display:flex;align-items:center;gap:8px}
+.pksort .lbl{margin:0;flex:none}
+.pksort .seg{flex:1}
+.pkgrid{flex:1;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start;
+  margin:0 -6px;padding:4px 6px 8px;-webkit-overflow-scrolling:touch}
+.pk{position:relative;display:flex;gap:6px;align-items:center;padding:7px 4px 6px 5px;
+  background:#141b36;border:var(--px) solid #364268;text-align:left;min-width:0}
+.pk canvas.f{width:24px;height:24px;flex:none}
+.pk .t{flex:1;min-width:0}
+.pk .n{font-size:22px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk .s{font-size:11px;color:var(--dim);line-height:1.4;white-space:nowrap;overflow:hidden;padding-right:18px}
+.pk .z{position:absolute;right:1px;bottom:1px;width:26px;height:24px;display:flex;align-items:center;justify-content:center}
+.pk .z canvas{width:16px;height:16px;opacity:.3}
+.pk .z span{display:none}
+.pk.off{background:rgba(14,18,36,.9);border-style:dashed;border-color:#2c3558}
+.pk.off .n{color:var(--dim)}
+.pk.off canvas.f{opacity:.4;filter:grayscale(.85)}
+.pk.off .z canvas{opacity:1}
+.pk .ck{display:none;position:absolute;left:-5px;top:-5px;width:20px;height:20px;background:#0b0e1c;
+  border:var(--px) solid #6a7aa8;z-index:2}
+.pk .ck canvas{width:16px;height:16px;display:none}
+.pkgrid.multi .pk .ck{display:block}
+.pkgrid.multi .pk .z{display:none}
+.pk.sel{border-color:var(--gold);border-style:solid;background:#26315a}
+.pk.sel .ck{border-color:var(--gold)}
+.pk.sel .ck canvas{display:block}
+.pkbar{display:none;flex:none;gap:6px;align-items:center;padding-top:10px;margin-top:2px;
+  border-top:var(--px) solid rgba(226,191,104,.3);font-size:11px;color:var(--dim)}
+.pkbar.on{display:flex}
+.pkbar b{color:var(--gold);font-size:22px;font-weight:normal;margin:0 2px}
+.pkbar .sp{flex:1}
+.pkbar .btn{width:auto;margin:0;padding:6px 10px}
+.pkempty{grid-column:1/-1}
+.pkchk{display:none;align-items:center;gap:8px;margin-top:7px;font-size:11px;color:var(--text);cursor:pointer}
+.pkchk.on{display:flex}
+.pkchk input{position:absolute;opacity:0;pointer-events:none}
+.pkchk .bx{width:22px;height:22px;flex:none;background:#0b0e1c;border:var(--px) solid #6a7aa8;display:flex;align-items:center;justify-content:center}
+.pkchk .bx canvas{width:16px;height:16px;display:none}
+.pkchk input:checked+.bx{border-color:var(--gold)}
+.pkchk input:checked+.bx canvas{display:block}
+.pkchk small{color:var(--dim);font-size:11px}
+.edstat{font-size:11px;color:var(--dim);margin:-4px 0 12px}
 </style>
 </head>
 <body>
@@ -376,8 +432,8 @@ nav button[aria-pressed=true] canvas{opacity:1}
       <input class="inp" id="newShop" placeholder="新增店家" enterkeyhint="done">
       <button class="btn sm" id="addShop" style="width:74px;margin:0;flex:none">加入</button>
     </div>
-    <div id="shops"></div>
-    <button class="btn sm" id="moreShops" style="display:none"></button>
+    <button class="btn sm" id="btnPocket" style="margin-top:0">整理名單 ▸</button>
+    <div class="pkhint" id="pkHint"></div>
   </div>
 </section>
 
@@ -400,6 +456,8 @@ nav button[aria-pressed=true] canvas{opacity:1}
         <input class="inp" id="shop" list="shoplist" placeholder="吃哪家">
         <datalist id="shoplist"></datalist>
       </div>
+      <label class="pkchk" id="pkChkRow"><input type="checkbox" id="fAddPk"><span class="bx"></span>
+        <span>加入口袋名單 <small id="pkChkSub">（之後抽籤會抽到）</small></span></label>
     </div>
     <div class="field">
       <div class="lbl">誰先付的</div>
@@ -487,11 +545,36 @@ nav button[aria-pressed=true] canvas{opacity:1}
   <button class="btn" data-close>關閉</button>
 </div></div>
 
+<div class="mask full" id="mPocket"><div class="win">
+  <div class="hd" data-ic="bowl"><span class="l">整理名單</span>
+    <button class="pkx" id="pkMulti" aria-pressed="false">多選</button>
+    <button class="pkx" id="pkDone">完成</button></div>
+  <div class="pktool">
+    <input class="inp" id="pkQ" placeholder="搜尋店名" enterkeyhint="search">
+    <div class="seg row sm" id="pkF">
+      <button data-v="on">抽籤中<small></small></button><button data-v="off">休息中<small></small></button><button data-v="all">全部<small></small></button>
+    </div>
+    <div class="pksort"><span class="lbl">排序</span>
+      <div class="seg row sm" id="pkS"><button data-v="old">最久沒去</button><button data-v="freq">最常去</button><button data-v="name">店名</button></div>
+    </div>
+  </div>
+  <div class="pkgrid" id="pkGrid"></div>
+  <div class="pkbar" id="pkBar">已選<b id="pkN">0</b>家<span class="sp"></span>
+    <button class="btn sm" id="pkRest">休息</button><button class="btn sm" id="pkWake">回抽籤</button>
+    <button class="btn sm" id="pkDel" style="color:var(--loss)">移除</button></div>
+</div></div>
+
 <div class="mask" id="mShop"><div class="win">
   <div class="hd" data-ic="bowl"><span class="l">編輯店家</span></div>
+  <div class="edstat" id="edStat"></div>
   <div class="field">
     <div class="lbl">名字</div>
     <input class="inp" id="edName">
+    <div class="note" id="edMerge" style="display:none;margin:8px 0 0"></div>
+  </div>
+  <div class="field">
+    <div class="lbl">抽籤（休息中的店不會被抽到，紀錄照樣保留）</div>
+    <div class="seg row" id="edOff"><button data-v="0">抽籤中</button><button data-v="1">休息中</button></div>
   </div>
   <div class="field">
     <div class="lbl">圖示（改了以前記過的也會跟著換）</div>
@@ -642,7 +725,7 @@ const eTotal = e => AK.reduce((s, k) => s + (+e[k] || 0), 0);
 const openEntries = () => alive(S.entries).filter(e => !e.periodId).sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 /* ================= 同步 ================= */
-let syncing = false, retry = false;
+let syncing = false, retry = false, syncRetryT = 0;
 function setSync(cls, txt) { const b = $('sync'); b.className = cls; b.textContent = txt; }
 function syncLabel() {
   if (!S.cfg.url) return setSync('bad', '未設定');
@@ -688,9 +771,11 @@ async function sync(quiet) {
       x.t === o.t && x.row.id === o.row.id && x.row.updatedAt === o.row.updatedAt));
     mergeAll(j);
     S.lastSync = Date.now(); save(); render();
+    if (j.blocked) toast('有 ' + j.blocked + ' 筆已關帳的紀錄沒改成功，已還原');
     if (!quiet) toast('同步完成');
   } catch (e) {
     syncing = false; setSync('bad', '同步失敗');
+    clearTimeout(syncRetryT); if (S.outbox.length) syncRetryT = setTimeout(() => sync(true), 30000);
     if (!quiet) toast('同步失敗：' + e.message);
     return;
   }
@@ -999,9 +1084,10 @@ function setDecided(on) {
   $('btnNo').textContent = on ? '再抽一次' : (battleMode() ? '逃跑' : '再抽一次');
 }
 function decide() {
+  if (!foeShop) return;
   setDecided(true);
   const st_ = shopStats(foeShop.name);
-  if (!editing && foeShop) { $('shop').value = foeShop.name; paint(ic(foeShop.icon), false); }
+  if (!editing && foeShop) { $('shop').value = foeShop.name; paint(ic(foeShop.icon), false); updPkChk(); }
   $('foeSub').textContent = '今天就吃這家'; $('encSub').textContent = '今天就吃這家';
   let msg;
   if (!st_.n) msg = '第一次挑戰這家！\u3000店名先幫你填好了，吃完再記也可以。';
@@ -1015,7 +1101,7 @@ function decide() {
 }
 const battleMode = () => S.cfg.enc !== 'classic';
 function pickShop() {
-  const all = alive(S.shops);
+  const all = alive(S.shops).filter(s => !+s.off);   // 休息中的不抽
   if (!all.length) return null;
   const rec = lastEaten(), cd = +S.cfg.cool || 0;
   let pool = all.filter(s => rec[s.name] == null || rec[s.name] >= cd);
@@ -1039,8 +1125,7 @@ function roll() {
   if (rolling) return;
   setDecided(false);
   const p = pickShop();
-  if (!p) { toast('先在下面加幾家店'); return; }
-  if (rolling) return;
+  if (!p) { toast(alive(S.shops).length ? '名單上的店都在休息中' : '先在下面加幾家店'); return; }
   rolling = true;
   if (battleMode()) {
     const st = $('stage');
@@ -1079,7 +1164,7 @@ $('btnNo').onclick = () => {
   if (decided) { roll(); return; }
   if (battleMode() && foeShop) {
     type($('talk'), RUNLINES[Math.floor(Math.random() * RUNLINES.length)]);
-    setTimeout(roll, 700);
+    rolling = true; setTimeout(() => { rolling = false; roll(); }, 700);
   } else roll();
 };
 $('btnOk').onclick = () => {
@@ -1108,12 +1193,13 @@ $('btnOk').onclick = () => {
 }
 $('addShop').onclick = () => {
   const v = $('newShop').value.trim(); if (!v) return;
-  if (alive(S.shops).some(s => s.name === v)) { toast('已經有這家了'); return; }
+  const ex = alive(S.shops).find(s => s.name === v);
+  if (ex) { toast(+ex.off ? '已經有這家了（休息中，到整理名單打開）' : '已經有這家了'); return; }
   put('shops', { id: uid(), name: v, icon: guess(v) || 'bento', by: S.me });
   $('newShop').value = ''; toast('加好了');
 };
 $('newShop').addEventListener('keydown', e => { if (e.key === 'Enter') $('addShop').click(); });
-$('moreShops').onclick = () => { shopsOpen = !shopsOpen; render(); };
+
 
 /* ================= 記錄 ================= */
 let editing = null, cur = 'bento', manual = false, iconTarget = 'entry', shopsOpen = false;
@@ -1194,9 +1280,10 @@ function resetForm() {
   $('payer').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === (S.me || 'm1')));
   $('formTitle').textContent = '記錄戰果'; $('btnSave').textContent = '寫入公會帳簿';
   $('editRow').style.display = 'none'; paint('bento', false); setMeal('lunch');
+  if ($('pkChkRow')) updPkChk();
 }
 $('btnCancel').onclick = () => { resetForm(); render(); };
-$('btnDel').onclick = () => { if (editing) { const id = editing; resetForm(); delEntry(id); render(); } };
+$('btnDel').onclick = () => { if (editing) { delEntry(editing); render(); } };
 $('btnSave').onclick = () => {
   const a = amtVals();
   if (!a.some(x => x > 0)) { toast('至少要有一個人的金額'); return; }
@@ -1208,7 +1295,8 @@ $('btnSave').onclick = () => {
     periodId: editing ? (alive(S.entries).find(e => e.id === editing) || {}).periodId || '' : ''
   };
   put('entries', row);
-  if (!alive(S.shops).some(s => s.name === shop)) put('shops', { id: uid(), name: shop, icon: cur, by: S.me });
+  const typed = $('shop').value.trim();
+  if (!alive(S.shops).some(s => s.name === shop)) { if (typed && $('pkChkRow').classList.contains('on') && $('fAddPk').checked) put('shops', { id: uid(), name: shop, icon: cur, by: S.me, off: 0 }); }
   else { const sh = alive(S.shops).find(s => s.name === shop); if (sh && manual && sh.icon !== cur) put('shops', Object.assign({}, sh, { icon: cur })); }
   const wasEditing = !!editing;
   resetForm(); render(); toast(wasEditing ? '改好了' : '記好了');
@@ -1221,7 +1309,7 @@ function editEntry(id) {
   $('payer').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === e.payer));
   AK.forEach((k, i) => $('amt' + i).value = (+e[k] || 0) || '');
   $('formTitle').textContent = '改這一筆'; $('btnSave').textContent = '更新';
-  $('editRow').style.display = ''; scrollTo(0, 0);
+  $('editRow').style.display = ''; scrollTo(0, 0); updPkChk();
 }
 function delEntry(id) {
   const e = alive(S.entries).find(x => x.id === id); if (!e) return;
@@ -1235,8 +1323,10 @@ function delEntry(id) {
 /* ================= 店家編輯 ================= */
 let edShop = null, edIcon = 'bento';
 function openShop(s) {
-  edShop = s; edIcon = ic(s.icon);
-  $('edName').value = s.name;
+  edShop = s; edIcon = ic(s.icon); edOff = +s.off ? 1 : 0;
+  $('edName').value = s.name; edMergeNote(); paintOff();
+  const st = pkStats()[s.name];
+  $('edStat').textContent = st ? '去過 ' + st.n + ' 次・上次' + (st.last === 0 ? '今天' : st.last === 1 ? '昨天' : ' ' + st.last + ' 天前') : '還沒記過這家';
   paintEd();
   $('mShop').classList.add('on');
 }
@@ -1250,7 +1340,15 @@ $('edSave').onclick = () => {
   if (!edShop) return;
   const newName = $('edName').value.trim() || edShop.name;
   const oldName = edShop.name, oldIcon = edShop.icon;
-  put('shops', Object.assign({}, edShop, { name: newName, icon: edIcon }));
+  const twin = newName !== oldName && alive(S.shops).find(s => s.name === newName && s.id !== edShop.id);
+  if (twin) {                                   // 改成已經有的店名 → 合併
+    if (!confirm('已經有「' + newName + '」了。\n要把「' + oldName + '」合併進去嗎？以前的紀錄會全部算到「' + newName + '」。')) return;
+    put('shops', Object.assign({}, edShop, { deleted: 1 }));
+    const hit = alive(S.entries).filter(e => e.shop === oldName);
+    if (hit.length) putMany('entries', hit.map(e => Object.assign({}, e, { shop: newName, icon: twin.icon })));
+    $('mShop').classList.remove('on'); edShop = null; toast('合併好了'); return;
+  }
+  put('shops', Object.assign({}, edShop, { name: newName, icon: edIcon, off: edOff }));
   // 連動：這家店已記過的紀錄一起換圖／改名
   if (newName !== oldName || edIcon !== oldIcon) {
     const hit = alive(S.entries).filter(e => e.shop === oldName);
@@ -1381,7 +1479,7 @@ function renderCal() {
   $('mkvs').innerHTML = '';
   [[statWho ? '本月午餐' : '本月全隊', lun.length ? nt(tot) + ' 元' : '—'],
    [statWho ? '你吃了' : '吃了幾餐', lun.length + ' 餐'],
-   [statWho ? '每餐平均' : '每人每餐', lun.length ? nt(tot / lun.length / per2) + ' 元' : '—'],
+   [statWho ? '每餐平均' : '每人每餐', lun.length ? nt(tot / Math.max(1, lun.reduce((s, e) => s + (mi2 < 0 ? AK.filter(k => +e[k] > 0).length : 1), 0))) + ' 元' : '—'],
    ['最貴的一餐', mx2 ? md(mx2.date) + ' ' + mx2.shop + ' ' + nt(amt2(mx2)) : '—'],
    ['最常吃', top ? top[0] + ' ' + top[1] + ' 次' : '—']].forEach(([k, v]) => {
     const d = document.createElement('div'); d.className = 'kv';
@@ -1467,7 +1565,7 @@ $('setSave').onclick = async () => {
   await sync();
 };
 $('btnExport').onclick = () => {
-  const b = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
+  const b = new Blob([JSON.stringify(Object.assign({}, S, { cfg: Object.assign({}, S.cfg, { key: '' }) }), null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(b);
   a.download = 'lunch-guild-' + today() + '.json'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 3000);
@@ -1504,30 +1602,7 @@ function render() {
   if (!list.length) lg.innerHTML = '<div class="zero">本期還沒記過。<br>去「遭遇」抽一家，或直接到「記錄」寫。</div>';
   else list.forEach(e => lg.appendChild(entryEl(e)));
 
-  // 口袋名單：最久沒吃的排前面，預設只露 5 家
-  const rec = lastEaten(), shops = alive(S.shops).slice()
-    .sort((a, b) => (rec[b.name] == null ? 9e3 : rec[b.name]) - (rec[a.name] == null ? 9e3 : rec[a.name]));
-  $('shopCnt').textContent = shops.length + ' 家';
-  const sb = $('shops'); sb.innerHTML = '';
-  if (!shops.length) sb.innerHTML = '<div class="zero">還沒有店家。加幾家常吃的進來。</div>';
-  const show = shopsOpen ? shops : shops.slice(0, 5);
-  show.forEach(s => {
-    const d = document.createElement('button'); d.className = 'e';
-    d.appendChild(pxc('f', s.icon || 'bento', 24));
-    const t = document.createElement('div'); t.className = 't';
-    t.innerHTML = '<div class="s1">' + esc(s.name) + '</div>';
-    const a = document.createElement('div'); a.className = 'a';
-    const dd = rec[s.name];
-    a.textContent = dd == null ? '沒記過' : dd === 0 ? '今天' : dd === 1 ? '昨天' : dd + ' 天前';
-    d.append(t, a);
-    d.onclick = () => openShop(s);
-    sb.appendChild(d);
-  });
-  const more = $('moreShops');
-  if (shops.length > 5) {
-    more.style.display = '';
-    more.textContent = shopsOpen ? '收起來 ▲' : '還有 ' + (shops.length - 5) + ' 家 ▼';
-  } else more.style.display = 'none';
+  renderPocket();
 
   // 清算
   $('stRange').textContent = list.length ? md(ds[0]) + '–' + md(ds[ds.length - 1]) + '・' + nt(list.reduce((s, e) => s + eTotal(e), 0)) + ' 元' : '';
@@ -1612,7 +1687,7 @@ function render() {
   $('kvSub').textContent = '近 8 週';
   $('kvs').innerHTML = '';
   [[statWho ? '每週花費' : '每週全隊', active ? nt(wsum / active) + ' 元' : '—'],
-   [statWho ? '每餐平均' : '每人每餐', rs.length ? nt(wsum / rs.length / per) + ' 元' : '—'],
+   [statWho ? '每餐平均' : '每人每餐', rs.length ? nt(wsum / Math.max(1, rs.reduce((s, e) => s + (mi < 0 ? AK.filter(k => +e[k] > 0).length : 1), 0))) + ' 元' : '—'],
    ['近 8 週合計', nt(wsum) + ' 元'],
    [statWho ? '你吃了' : '全隊記錄', rs.length + ' 餐']].forEach(([k, v]) => {
     const d = document.createElement('div'); d.className = 'kv';
@@ -1644,6 +1719,114 @@ function render() {
   buildWhoSeg();
   renderCal();
 }
+
+
+/* ================= v2.0 口袋名單 ================= */
+ICON.moon = ['................', '.............2..', '....111.....232.', '...12241.....2..', '..13241.........', '.133241.........', '.133241.........', '1333241.........', '1333241.........', '13332241........', '1332224411111...', '.1322222444441..', '.1322222222221..', '..12222222221...', '...122222221....', '....1111111.....'];
+ICON.check = ['................', '................', '.............11.', '............1331', '...........13321', '.11.......13321.', '1331.....13321..', '13321...13321...', '.13321.13321....', '..1333333321....', '...133333321....', '....1333321.....', '.....13321......', '......121.......', '.......1........', '................'];
+let edOff = 0;
+const pk = { q: '', f: 'on', sort: 'old', multi: false, sel: new Set() };
+function pkStats() {
+  const r = {};
+  alive(S.entries).forEach(e => {
+    if (!e.shop) return;
+    const o = r[e.shop] || (r[e.shop] = { n: 0, last: null });
+    o.n++; const d = dayDiff(e.date, today());
+    if (o.last == null || d < o.last) o.last = d;
+  });
+  return r;
+}
+const pkWhen = d => d == null ? '沒去過' : d === 0 ? '今天' : d === 1 ? '昨天' : d + '天前';
+function renderPocket() {
+  const all = alive(S.shops), off = all.filter(s => +s.off).length;
+  $('shopCnt').textContent = all.length ? all.length + ' 家' + (off ? '・休息中 ' + off + ' 家' : '') : '';
+  $('pkHint').textContent = all.length
+    ? '抽籤會跳過「休息中」的店' + (+S.cfg.cool ? '，和 ' + S.cfg.cool + ' 天內吃過的。' : '。')
+    : '還沒有店家。加幾家常吃的進來。';
+  if (!$('mPocket').classList.contains('on')) return;
+  const st = pkStats(), q = pk.q.trim().toLowerCase();
+  const cnt = { on: all.length - off, off, all: all.length };
+  $$('#pkF button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.v === pk.f); b.querySelector('small').textContent = cnt[b.dataset.v]; });
+  $$('#pkS button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === pk.sort));
+  $('pkMulti').setAttribute('aria-pressed', pk.multi);
+  let list = all.filter(s => pk.f === 'all' || (pk.f === 'off') === !!+s.off)
+    .filter(s => !q || s.name.toLowerCase().includes(q));
+  const L = s => (st[s.name] || {}).last, Nn = s => (st[s.name] || {}).n || 0;
+  if (pk.sort === 'old') list.sort((a, b) => (L(b) == null ? 9e9 : L(b)) - (L(a) == null ? 9e9 : L(a)));
+  else if (pk.sort === 'freq') list.sort((a, b) => Nn(b) - Nn(a) || (L(a) ?? 9e9) - (L(b) ?? 9e9));
+  else list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
+  const g = $('pkGrid'); g.innerHTML = ''; g.classList.toggle('multi', pk.multi);
+  if (!list.length) g.innerHTML = '<div class="zero pkempty">' + (q ? '找不到「' + esc(pk.q.trim()) + '」' : pk.f === 'off' ? '沒有休息中的店。' : '這裡是空的。') + '</div>';
+  list.forEach(s => {
+    const d = document.createElement('button');
+    d.className = 'pk' + (+s.off ? ' off' : '') + (pk.sel.has(s.id) ? ' sel' : '');
+    const ck = document.createElement('i'); ck.className = 'ck'; ck.appendChild(uic('check', 16));
+    const f = pxc('f', s.icon || 'bento', 24); f.classList.add('f');
+    const t = document.createElement('div'); t.className = 't';
+    const o = st[s.name];
+    t.innerHTML = '<div class="n">' + esc(s.name) + '</div><div class="s">' + (o ? o.n + '次・' + pkWhen(o.last) : '沒去過') + '</div>';
+    const z = document.createElement('span'); z.className = 'z';
+    z.appendChild(uic('moon', 16, +s.off ? UGOLD : UDIM));
+    const zl = document.createElement('span'); zl.textContent = +s.off ? '休息中' : '抽籤中'; z.appendChild(zl);
+    z.onclick = ev => {
+      ev.stopPropagation();
+      const now = +s.off ? 0 : 1;
+      put('shops', Object.assign({}, s, { off: now }));
+      toast(now ? '「' + s.name + '」休息中，不會被抽到' : '「' + s.name + '」回到抽籤');
+    };
+    d.append(ck, f, t, z);
+    d.onclick = () => {
+      if (pk.multi) { pk.sel.has(s.id) ? pk.sel.delete(s.id) : pk.sel.add(s.id); renderPocket(); }
+      else openShop(s);
+    };
+    g.appendChild(d);
+  });
+  [...pk.sel].forEach(id => { if (!all.some(s => s.id === id)) pk.sel.delete(id); });
+  $('pkBar').classList.toggle('on', pk.multi);
+  $('pkN').textContent = pk.sel.size;
+  ['pkRest', 'pkWake', 'pkDel'].forEach(id => $(id).disabled = !pk.sel.size);
+}
+$('btnPocket').onclick = () => { pk.multi = false; pk.sel.clear(); pk.q = ''; $('pkQ').value = ''; $('mPocket').classList.add('on'); renderPocket(); $('pkGrid').scrollTop = 0; };
+$('pkDone').onclick = () => { $('mPocket').classList.remove('on'); render(); };
+$('pkQ').oninput = () => { pk.q = $('pkQ').value; renderPocket(); };
+$$('#pkF button').forEach(b => b.onclick = () => { pk.f = b.dataset.v; renderPocket(); });
+$$('#pkS button').forEach(b => b.onclick = () => { pk.sort = b.dataset.v; renderPocket(); });
+$('pkMulti').onclick = () => { pk.multi = !pk.multi; pk.sel.clear(); renderPocket(); };
+const pkPick = () => alive(S.shops).filter(s => pk.sel.has(s.id));
+$('pkRest').onclick = () => { const l = pkPick(); if (!l.length) return; putMany('shops', l.map(s => Object.assign({}, s, { off: 1 }))); pk.sel.clear(); toast(l.length + ' 家改成休息中'); };
+$('pkWake').onclick = () => { const l = pkPick(); if (!l.length) return; putMany('shops', l.map(s => Object.assign({}, s, { off: 0 }))); pk.sel.clear(); toast(l.length + ' 家回到抽籤'); };
+$('pkDel').onclick = () => {
+  const l = pkPick(); if (!l.length) return;
+  if (!confirm('把這 ' + l.length + ' 家從名單移除？（已記過的帳不受影響）')) return;
+  putMany('shops', l.map(s => Object.assign({}, s, { deleted: 1 }))); pk.sel.clear(); toast('移除了 ' + l.length + ' 家');
+};
+// 編輯店家：抽籤開關、改名撞名提示
+function paintOff() { $$('#edOff button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === edOff)); }
+$$('#edOff button').forEach(b => b.onclick = () => { edOff = +b.dataset.v; paintOff(); });
+function edMergeNote() {
+  const v = $('edName').value.trim(), n = $('edMerge');
+  const twin = edShop && v && v !== edShop.name && alive(S.shops).find(s => s.name === v && s.id !== edShop.id);
+  n.style.display = twin ? '' : 'none';
+  if (twin) n.textContent = '已經有「' + v + '」了，儲存會把兩家合併，紀錄全部算到「' + v + '」。';
+  $('edSave').textContent = twin ? '合併' : '儲存';
+}
+$('edName').addEventListener('input', edMergeNote);
+// 記錄頁：新店名才出現「加入口袋名單」
+function updPkChk() {
+  const v = $('shop').value.trim(), row = $('pkChkRow');
+  const isNew = !!v && !alive(S.shops).some(s => s.name === v);
+  if (!isNew) { row.classList.remove('on'); row.dataset.v = ''; return; }
+  if (row.dataset.v !== v || row.dataset.m !== mealId()) {     // 換了店名或餐別才重設預設值
+    const gone = (S.shops || []).some(s => s.deleted && s.name === v);
+    $('fAddPk').checked = !editing && !gone && mealId() === 'lunch';
+    $('pkChkSub').textContent = gone ? '（之前移除過）' : mealId() === 'lunch' ? '（之後抽籤會抽到）' : '（點心、晚餐預設不加）';
+    row.dataset.v = v; row.dataset.m = mealId();
+  }
+  row.classList.add('on');
+}
+$('shop').addEventListener('input', updPkChk);
+document.querySelector('#pkChkRow .bx').appendChild(uic('check', 16));
+$('fMeal').addEventListener('click', () => setTimeout(updPkChk, 0));
 
 /* ================= 啟動 ================= */
 buildForm(); resetForm(); applyEncStyle();

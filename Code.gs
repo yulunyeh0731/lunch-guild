@@ -13,11 +13,20 @@ var SECRET = 'CHANGE-ME-隨便打一串';
 
 var SHEETS = {
   members: ['id', 'name', 'portrait', 'cls', 'job', 'updatedAt', 'deleted'],
-  shops:   ['id', 'name', 'icon', 'by', 'updatedAt', 'deleted'],
+  shops:   ['id', 'name', 'icon', 'by', 'off', 'updatedAt', 'deleted'],   // off=1 休息中，不會被抽到
   entries: ['id', 'date', 'shop', 'icon', 'meal', 'payer', 'a1', 'a2', 'a3',
             'note', 'by', 'periodId', 'updatedAt', 'deleted'],
   periods: ['id', 'closedOn', 'fromDate', 'toDate', 'transfers', 'by', 'updatedAt', 'deleted']
 };
+
+// 這些欄位存成「純文字」，避免試算表把 7-11 變成日期、0800 變成數字
+var TEXT_COLS = {
+  members: ['id', 'name', 'portrait', 'cls', 'job', 'by'],
+  shops:   ['id', 'name', 'icon', 'by'],
+  entries: ['id', 'shop', 'icon', 'meal', 'payer', 'note', 'by', 'periodId'],
+  periods: ['id', 'transfers', 'by']
+};
+var FMT_VER = '2';
 
 var SEED_MEMBERS = [
   { id: 'm1', name: 'Yulun', portrait: 'yulun', cls: 'bow',    job: '友善時光獵人・電支專精' },
@@ -52,6 +61,7 @@ function handle_(e, body) {
       var data = readAll_(ss);
       data.ok = true;
       data.wrote = wrote;
+      data.blocked = body ? body._blocked || 0 : 0;
       data.ts = Date.now();
       return out_(data);
     } finally {
@@ -85,8 +95,24 @@ function ensure_(ss) {
     });
     m.getRange(2, 1, rows.length, SHEETS.members.length).setValues(rows);
   }
+  textFormat_(ss);
   var d = ss.getSheetByName('Sheet1') || ss.getSheetByName('工作表1');
   if (d && ss.getSheets().length > 1 && d.getLastRow() === 0) ss.deleteSheet(d);
+}
+
+/** 文字欄位設成純文字格式（只在第一次或欄位升級後做一次） */
+function textFormat_(ss) {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('fmt') === FMT_VER) return;
+  for (var name in TEXT_COLS) {
+    var sh = ss.getSheetByName(name);
+    var cols = SHEETS[name];
+    TEXT_COLS[name].forEach(function (c) {
+      var i = cols.indexOf(c);
+      if (i >= 0) sh.getRange(1, i + 1, sh.getMaxRows(), 1).setNumberFormat('@');
+    });
+  }
+  props.setProperty('fmt', FMT_VER);
 }
 
 /**
@@ -119,6 +145,7 @@ function migrate_(sh, cols) {
     out.push(row);
   }
   sh.clear();
+  PropertiesService.getScriptProperties().deleteProperty('fmt');   // 清表會清掉格式，等下重設
   sh.getRange(1, 1, 1, cols.length).setValues([cols]);
   if (out.length) sh.getRange(2, 1, out.length, cols.length).setValues(out);
   sh.setFrozenRows(1);
@@ -153,6 +180,7 @@ function readSheet_(ss, name) {
       o.a3 = Number(o.a3) || 0;
       o.date = fmtDate_(o.date);
     }
+    if (name === 'shops') o.off = Number(o.off) ? 1 : 0;
     if (name === 'periods') {
       o.fromDate = fmtDate_(o.fromDate);
       o.toDate = fmtDate_(o.toDate);
@@ -170,16 +198,25 @@ function fmtDate_(v) {
 
 /* ---------- 寫（逐列 upsert） ---------- */
 function write_(ss, body) {
-  var n = 0;
+  var n = 0, ctx = { blocked: 0, undone: undonePeriods_(ss, body) };
   for (var name in SHEETS) {
     var incoming = body[name];
     if (!incoming || !incoming.length) continue;
-    n += upsert_(ss, name, incoming);
+    n += upsert_(ss, name, incoming, ctx);
   }
+  body._blocked = ctx.blocked;
   return n;
 }
 
-function upsert_(ss, name, rows) {
+/** 已撤銷（刪除）的關帳 id：表上的 + 這次一起送來的 */
+function undonePeriods_(ss, body) {
+  var set = {};
+  readSheet_(ss, 'periods').forEach(function (p) { if (p.deleted) set[String(p.id)] = 1; });
+  (body.periods || []).forEach(function (p) { if (p && Number(p.deleted)) set[String(p.id)] = 1; });
+  return set;
+}
+
+function upsert_(ss, name, rows, ctx) {
   var sh = ss.getSheetByName(name);
   var cols = SHEETS[name];
   var last = sh.getLastRow();
@@ -212,6 +249,19 @@ function upsert_(ss, name, rows) {
       var i2 = index[id];
       var curTs = Number(existing[i2][cols.indexOf('updatedAt')]) || 0;
       if ((Number(row.updatedAt) || 0) <= curTs) continue;   // 舊的不覆蓋新的
+      if (name === 'entries') {
+        // 已關帳的紀錄不能被「還沒同步到關帳的手機」改回本期或刪掉，除非那次關帳被撤銷了
+        var pi = cols.indexOf('periodId');
+        var curPid = String(existing[i2][pi] || '');
+        if (curPid && curPid !== String(row.periodId || '') && !ctx.undone[curPid]) {
+          var keep = existing[i2].slice();
+          keep[cols.indexOf('updatedAt')] = Math.max(Number(row.updatedAt) || 0, Date.now()) + 1;   // 讓各手機改回關帳版本
+          updates.push([i2 + 2, keep]);
+          existing[i2] = keep;
+          ctx.blocked++;
+          continue;
+        }
+      }
       updates.push([i2 + 2, vals]);
       existing[i2] = vals;
       wrote++;
