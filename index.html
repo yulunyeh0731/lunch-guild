@@ -369,14 +369,15 @@ nav button[aria-pressed=true] canvas{opacity:1}
   <div class="win">
     <div class="hd" data-ic="book"><span class="l">加入公會</span></div>
     <div class="field">
-      <div class="lbl">API 網址（Apps Script 部署後的 /exec）</div>
-      <input class="inp s" id="setUrl" placeholder="https://script.google.com/macros/s/..../exec" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="lbl">通關密語</div>
+      <input class="inp s" id="setKey" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     </div>
-    <div class="field">
-      <div class="lbl">通關密語（要和 Code.gs 裡的 SECRET 一樣）</div>
-      <input class="inp s" id="setKey" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="field" id="setUrlBox" style="display:none">
+      <div class="lbl">API 網址（Apps Script 部署後的 /exec）</div>
+      <input class="inp s" id="setUrl" value="https://script.google.com/macros/s/AKfycbyfjMo1YNka--IyzYARuIWRHHW_OQZr2ZjOACI1sNKyKJ1Rd9tbSyB66VRLA-mLv5w70g/exec" autocapitalize="off" autocorrect="off" spellcheck="false">
     </div>
     <button class="btn gold" id="setGo">連線</button>
+    <button class="btn sm" id="setUrlTgl" style="margin-top:8px">改用別的網址</button>
   </div>
   <div class="win" id="whoBox" style="display:none">
     <div class="hd" data-ic="party"><span class="l">你是誰</span></div>
@@ -865,16 +866,19 @@ $$('.mask').forEach(m => m.onclick = e => {
 });
 
 /* ================= 初次設定 ================= */
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyfjMo1YNka--IyzYARuIWRHHW_OQZr2ZjOACI1sNKyKJ1Rd9tbSyB66VRLA-mLv5w70g/exec';
+$('setUrlTgl').onclick = () => { $('setUrlBox').style.display = ''; $('setUrlTgl').style.display = 'none'; };
+$('setKey').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('setGo').click(); } });
 $('setGo').onclick = async () => {
-  const u = $('setUrl').value.trim(), k = $('setKey').value.trim();
-  if (!u || !k) { toast('兩格都要填'); return; }
+  const u = $('setUrl').value.trim() || DEFAULT_URL, k = $('setKey').value.trim();
+  if (!k) { toast('先打通關密語'); return; }
   S.cfg.url = u; S.cfg.key = k; save();
   setSync('busy', '連線中');
   try {
     const j = await api(null);
     mergeAll(j); S.lastSync = Date.now(); save();
     $('whoBox').style.display = ''; buildWho(); toast('連上了，選一下你是誰');
-  } catch (e) { toast('連不上：' + e.message); setSync('bad', '連線失敗'); }
+  } catch (e) { toast(e.message === 'bad key' ? '通關密語不對' : '連不上：' + e.message); setSync('bad', '連線失敗'); }
 };
 let whoSel = 'm1';
 function buildWho() {

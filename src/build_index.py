@@ -4,7 +4,7 @@
 import os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import battle34, app34, pocket34, fix20, appicon
+import battle34, app34, pocket34, fix20, appicon, join20
 REPO = os.path.dirname(HERE) + os.sep
 BASE = REPO + 'index-v1.3-backview.html'
 if not os.path.exists(BASE):
@@ -16,6 +16,7 @@ h = app34.apply(h)                     # v1.5 起的 app 修正
 h = pocket34.apply(h)                  # v2.0 口袋名單整理
 h = fix20.apply(h)                     # v2.0 邏輯修正
 h = appicon.apply(h)                   # v2.0 App 圖示
+h = join20.apply(h)                    # v2.0.3 網址內建，只打通關密語
 open(REPO + 'index.html', 'w', encoding='utf-8').write(h)
 
 # 本機測試版（假資料、獨立儲存，不進 repo）：python3 src/testindex.py 會用它跑一次完整流程

@@ -10,6 +10,8 @@
 
 // ⚠️ 改成你們自己的隨機字串，前端設定頁要填一樣的
 var SECRET = 'CHANGE-ME-隨便打一串';
+// 其他也能用的通關密語（例如換新密語時，舊的先留著，大家的手機才不會突然連不上）
+var EXTRA_SECRETS = [];
 
 var SHEETS = {
   members: ['id', 'name', 'portrait', 'cls', 'job', 'updatedAt', 'deleted'],
@@ -49,7 +51,7 @@ function out_(o) {
 function handle_(e, body) {
   try {
     var k = e && e.parameter ? e.parameter.k : '';
-    if (k !== SECRET) return out_({ ok: false, error: 'bad key' });
+    if (k !== SECRET && EXTRA_SECRETS.indexOf(k) < 0) return out_({ ok: false, error: 'bad key' });
 
     var lock = LockService.getScriptLock();
     if (!lock.tryLock(25000)) return out_({ ok: false, error: 'busy' });
