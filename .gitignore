@@ -1,5 +1,6 @@
 src/index-test.html
 src/*.png
 !src/bg34.png
+!src/bgtown_street.png
 __pycache__/
 *.pyc

@@ -1,4 +1,6 @@
-"""app 本身的修正（v1.5）：套在 battle34.integrate() 之後。每個 patch 都 assert 找得到原文，對不上就直接報錯。"""
+"""app 本身的修正（v1.5 起）：套在 battle34.integrate() 之後。每個 patch 都 assert 找得到原文，對不上就直接報錯。"""
+import os, re, base64
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def apply(h):
@@ -83,4 +85,11 @@ def apply(h):
     patch("</body>",
           "<script>\nif ('serviceWorker' in navigator && location.protocol === 'https:') {\n"
           "  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));\n}\n</script>\n</body>")
+    # 5. 一般頁面的背景換成「午休商店街」（src/bgtown.py street），整數 2 倍、貼齊底部
+    b64 = base64.b64encode(open(os.path.join(HERE, 'bgtown_street.png'), 'rb').read()).decode()
+    h2 = re.sub(r'(<div id="bg"><img src="data:image/png;base64,)[^"]*', lambda m: m.group(1) + b64, h, count=1)
+    assert h2 != h, 'page bg'
+    h = h2
+    patch("#bg img{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;min-width:100%}",
+          "#bg img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:432px;height:auto;image-rendering:pixelated}")
     return h
