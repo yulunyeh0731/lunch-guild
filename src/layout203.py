@@ -5,7 +5,8 @@ CSS = r"""
 /* ---- v2.0.4 遭遇頁一屏 ---- */
 .stage .sc{position:absolute;left:0;right:0;bottom:0;height:436px}
 /* 戰鬥框內側原本透出舞台底色（淺藍）：底色只鋪在框內，跟其他視窗一樣 */
-.stage{background-clip:padding-box}
+.stage{background-clip:padding-box;border-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAUUlEQVR4XmPk4hH7z0ACYAGpvbE5iCgtGr7rIBpAYMaSE3g1ZcRYgOXhGkCgbe4FRmy6qpIN4M5mwmssFjAcNKCEEnJo4AJwDbBwJgQYSU0aAHvaD3+FHo9SAAAAAElFTkSuQmCC) 4 repeat}
+/* ↑ 原本的框圖右邊少了金色和暗金兩格（只剩黑線），右側金框一直不見；補齊成左右對稱 */
 /* 螢幕比背景圖寬時（iPhone 16 Pro Max 寬 440），左右兩邊原本露出淺藍底色：改成圖片左右接續鋪滿 */
 .stage .sc,#bg{background-repeat:repeat-x;background-position:center bottom;image-rendering:pixelated}
 .stage .sc{background-size:384px auto}
